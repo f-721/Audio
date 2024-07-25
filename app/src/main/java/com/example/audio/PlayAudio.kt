@@ -6,7 +6,8 @@ import android.media.MediaPlayer
 class PlayAudio {
     private var mediaPlayer: MediaPlayer? = null
 
-    fun playAudio(resourceName: String, context: Context) {
+    fun playAudio(context: Context) {
+        val resourceName = "rhythmrally1"
         val resId = context.resources.getIdentifier(resourceName, "raw", context.packageName)
         mediaPlayer = MediaPlayer.create(context, resId)
         mediaPlayer?.start()

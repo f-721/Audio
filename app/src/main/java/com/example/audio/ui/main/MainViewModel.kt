@@ -21,11 +21,11 @@ class MainViewModel : ViewModel() {
 
     // アプリ起動時にやっておきたい処理やインスタンス化
     fun start(context: Context) {
-        //accSensor = AccSensor(context)
+//        accSensor = AccSensor(context)
 //        accSensor.start()
 //        audioSensor = AudioSensor()
 //        audioSensor.start(context)
-        nearBy = NearBy(context)
+        //nearBy = NearBy(this)
 
 
         Log.d("MainViewModel","うわああああ")
