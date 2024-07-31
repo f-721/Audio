@@ -25,7 +25,7 @@ class MainFragment(private val nearBy: NearBy) : Fragment() {
     private lateinit var CountTextview: TextView
     private lateinit var accSensor: AccSensor
     private lateinit var accEstimation: AccEstimation
-    private lateinit var judgeTiming: JudgeTiming
+    private lateinit var judgeTime: JudgeTiming
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,7 +49,7 @@ class MainFragment(private val nearBy: NearBy) : Fragment() {
         accEstimation = AccEstimation() // AccEstimation の初期化
 
         // JudgeTiming の初期化
-         judgeTiming = JudgeTiming(accEstimation, tvjudge, nearBy)
+         judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy)
         // NearBy の初期化
         nearBy.initializeJudgeTiming(accEstimation, tvjudge)
 
@@ -59,7 +59,7 @@ class MainFragment(private val nearBy: NearBy) : Fragment() {
             tvjudge,
             accEstimation,
             nearBy,
-            judgeTiming
+            judgeTime
         )
 
         nearBy.setConnectionCountListener(object : NearBy.ConnectionCountListener {

@@ -37,6 +37,10 @@ class JudgeTiming(
         Log.d("JudgeTiming", "Observed lastHitTime: $newLastHitTime")
     }
 
+    fun setNearBy(nearBy: NearBy) {
+        this.nearBy = nearBy
+    }
+
     init {
         Log.d("JudgeTiming", "JudgeTiming initialized")
         accEstimation.isHit.observeForever(hitObserver)
