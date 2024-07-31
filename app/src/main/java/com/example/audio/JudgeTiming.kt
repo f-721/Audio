@@ -1,6 +1,5 @@
 package com.example.audio
 
-import android.content.Context
 import android.util.Log
 import android.widget.TextView
 import androidx.lifecycle.LiveData
@@ -17,8 +16,9 @@ import kotlinx.coroutines.launch
 class JudgeTiming(
     private val accEstimation: AccEstimation,
     private val tvgreat: TextView,
-    private val nearBy: NearBy
+    nearBy: NearBy?,
 ) : ViewModel() {
+    lateinit var nearBy: NearBy
 
     private val _judgement = MutableLiveData<String>()
     val judgement: LiveData<String> get() = _judgement
@@ -35,10 +35,6 @@ class JudgeTiming(
     private val lastHitTimeObserver = Observer<Long> { newLastHitTime ->
         lastHitTime = newLastHitTime
         Log.d("JudgeTiming", "Observed lastHitTime: $newLastHitTime")
-    }
-
-    fun setNearBy(nearBy: NearBy) {
-        this.nearBy = nearBy
     }
 
     init {

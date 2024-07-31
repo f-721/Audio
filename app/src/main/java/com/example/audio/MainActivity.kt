@@ -6,7 +6,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.example.audio.ui.main.MainFragment
 import pub.devrel.easypermissions.EasyPermissions
-import android.util.Log
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,16 +17,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        nearBy = NearBy(this,judgeTiming)
-
-        // nearByにjudgeTimingをセット
-        nearBy.setJudgeTiming(judgeTiming)
-
+        // JudgeTimingの初期化
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
             tvgreat = findViewById(R.id.tvgreat),
-            nearBy = nearBy
+            nearBy = null // Temporarily set as null
         )
+
+        // NearByの初期化
+        nearBy = NearBy(this, judgeTiming)
+
+        // JudgeTimingにNearByを設定
+        judgeTiming.nearBy = nearBy
+
+        // JudgeTimingをNearByに設定
+        nearBy.setJudgeTiming(judgeTiming)
 
         playAudio = PlayAudio()
 
@@ -36,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                 replace(R.id.container, MainFragment.newInstance(nearBy))
             }
 
-            //xmlで定義したパーミッションの権限を付与
+            // xmlで定義したパーミッションの権限を付与
             val permissions = arrayOf(
                 Manifest.permission.RECORD_AUDIO,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -46,14 +50,12 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.ACCESS_WIFI_STATE,
                 Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.NEARBY_WIFI_DEVICES
             )
-        //パーミッションの許可
-        if (!EasyPermissions.hasPermissions(this, *permissions)) {
-            EasyPermissions.requestPermissions(this, "パーミッションに関する説明", 1, *permissions)
-        }
-
+            // パーミッションの許可
+            if (!EasyPermissions.hasPermissions(this, *permissions)) {
+                EasyPermissions.requestPermissions(this, "パーミッションに関する説明", 1, *permissions)
+            }
         }
     }
 }
