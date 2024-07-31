@@ -18,17 +18,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        playAudio = PlayAudio()
+        nearBy = NearBy(this,judgeTiming)
+
+        // nearByにjudgeTimingをセット
+        nearBy.setJudgeTiming(judgeTiming)
 
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
-            tvgreat = findViewById(R.id.tvgreat)
+            tvgreat = findViewById(R.id.tvgreat),
+            nearBy = nearBy
         )
 
-        nearBy = NearBy(this, judgeTiming)
-
-        // nearByにjudgeTimingをセット
-        judgeTiming.setNearBy(nearBy)
+        playAudio = PlayAudio()
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
@@ -48,10 +49,11 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.NEARBY_WIFI_DEVICES
             )
-            //パーミッションの許可
-            if (!EasyPermissions.hasPermissions(this, *permissions)) {
-                EasyPermissions.requestPermissions(this, "パーミッションに関する説明", 1, *permissions)
-            }
+        //パーミッションの許可
+        if (!EasyPermissions.hasPermissions(this, *permissions)) {
+            EasyPermissions.requestPermissions(this, "パーミッションに関する説明", 1, *permissions)
+        }
+
         }
     }
 }
