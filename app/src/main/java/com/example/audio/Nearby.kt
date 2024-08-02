@@ -5,59 +5,38 @@ import android.media.MediaPlayer
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
-import android.widget.TextView
 import android.widget.Toast
 import com.google.android.gms.nearby.Nearby
-import com.google.android.gms.nearby.connection.AdvertisingOptions
-import com.google.android.gms.nearby.connection.ConnectionInfo
-import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
-import com.google.android.gms.nearby.connection.ConnectionResolution
-import com.google.android.gms.nearby.connection.ConnectionsClient
-import com.google.android.gms.nearby.connection.ConnectionsStatusCodes
-import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo
-import com.google.android.gms.nearby.connection.DiscoveryOptions
-import com.google.android.gms.nearby.connection.EndpointDiscoveryCallback
-import com.google.android.gms.nearby.connection.Payload
-import com.google.android.gms.nearby.connection.PayloadCallback
-import com.google.android.gms.nearby.connection.PayloadTransferUpdate
-import com.google.android.gms.nearby.connection.Strategy
+import com.google.android.gms.nearby.connection.*
 
-class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) {
+class NearBy(private val context: Context, private var judgeTiming: JudgeTiming) {
     var SERVICE_ID = "atuo.nearby"
     var nickname: String
     val TAG = "myapp"
     var startcount = 0
-//    val accEstimation = AccEstimation()
-//    val nearbyManager = NearBy(context)
     private var connectionsClient: ConnectionsClient = Nearby.getConnectionsClient(context)
     private var startSignalReceived = mutableSetOf<String>()
-    private lateinit var JudgeTiming : JudgeTiming
+    private lateinit var JudgeTiming: JudgeTiming
     private lateinit var playAudio: PlayAudio
-   // private var connectionsClient: ConnectionsClient
     private var isConnected: Boolean = false
     private lateinit var endpointId: String
     private lateinit var mediaPlayer: MediaPlayer
-
-    fun setJudgeTiming(judgeTiming: JudgeTiming) {
-        this.JudgeTiming = judgeTiming
-    }
+    private val connectedEndpoints = mutableListOf<String>()
+    private val maxConnections = 2
 
     init {
         playAudio = PlayAudio()
-//        JudgeTiming = JudgeTiming(accEstimation, tvgreat, nearbyManager)
-    }
-    interface ConnectionCountListener {
-        fun onConnectionCountChanged(count: Int)
-    }
-    private var connectionCountListener: ConnectionCountListener? = null
-
-    init {
         connectionsClient = Nearby.getConnectionsClient(context)
         nickname = generateUniqueNickname(context)
     }
 
+    interface ConnectionCountListener {
+        fun onConnectionCountChanged(count: Int)
+    }
+
+    private var connectionCountListener: ConnectionCountListener? = null
+
     private fun generateUniqueNickname(context: Context): String {
-        // Android IDを利用してユニークなニックネームを生成する
         return "atuo_${Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)}"
     }
 
@@ -69,13 +48,10 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
         connectionsClient = Nearby.getConnectionsClient(context)
     }
 
-    // ID保存
-    private val connectedEndpoints = mutableListOf<String>()
-
     fun sendTimeDiff(timeDiff: Long) {
         if (::endpointId.isInitialized) {
             val payload = Payload.fromBytes(timeDiff.toString().toByteArray())
-            Nearby.getConnectionsClient(context).sendPayload(endpointId, payload)
+            connectionsClient.sendPayload(endpointId, payload)
         } else {
             Log.d(TAG, "Endpoint ID is not initialized")
         }
@@ -84,19 +60,19 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
     fun sendJudgement(judgement: String) {
         if (::endpointId.isInitialized) {
             val payload = Payload.fromBytes(judgement.toByteArray())
-            Nearby.getConnectionsClient(context).sendPayload(endpointId, payload)
+            connectionsClient.sendPayload(endpointId, payload)
         } else {
             Log.d(TAG, "Endpoint ID is not initialized")
         }
     }
 
     fun advertise() {
-        if (isConnected) {
-            Log.d(TAG, "既に接続済みです")
+        if (connectedEndpoints.size >= maxConnections) {
+            Log.d(TAG, "既に最大接続数に達しています")
             return
         }
         Log.d(TAG, "advertiseをタップ!!!!!")
-        Nearby.getConnectionsClient(context)
+        connectionsClient
             .startAdvertising(
                 nickname,
                 SERVICE_ID,
@@ -112,12 +88,12 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
     }
 
     fun advertise2() {
-        if (isConnected) {
-            Log.d(TAG, "既に接続済みです")
+        if (connectedEndpoints.size >= maxConnections) {
+            Log.d(TAG, "既に最大接続数に達しています")
             return
         }
         Log.d(TAG, "advertise2をタップ!?!?!?")
-        Nearby.getConnectionsClient(context)
+        connectionsClient
             .startAdvertising(
                 nickname,
                 SERVICE_ID,
@@ -133,12 +109,12 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
     }
 
     fun discovery() {
-        if (isConnected) {
-            Log.d(TAG, "既に接続済みです")
+        if (connectedEndpoints.size >= maxConnections) {
+            Log.d(TAG, "既に最大接続数に達しています")
             return
         }
         Log.d(TAG, "Discoveryをタップ")
-        Nearby.getConnectionsClient(context)
+        connectionsClient
             .startDiscovery(
                 SERVICE_ID,
                 mEndpointDiscoveryCallback,
@@ -153,12 +129,12 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
     }
 
     fun discovery2() {
-        if (isConnected) {
-            Log.d(TAG, "既に接続済みです")
+        if (connectedEndpoints.size >= maxConnections) {
+            Log.d(TAG, "既に最大接続数に達しています")
             return
         }
         Log.d(TAG, "Discovery2をタップ")
-        Nearby.getConnectionsClient(context)
+        connectionsClient
             .startDiscovery(
                 SERVICE_ID,
                 mEndpointDiscoveryCallback,
@@ -172,11 +148,12 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
             }
     }
 
+
+
     private val mEndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, discoveredEndpointInfo: DiscoveredEndpointInfo) {
             Log.d(TAG, "Advertise側を発見した")
-            Nearby.getConnectionsClient(context)
-                .requestConnection(nickname, endpointId, mConnectionLifecycleCallback)
+            connectionsClient.requestConnection(nickname, endpointId, mConnectionLifecycleCallback)
         }
 
         override fun onEndpointLost(endpointId: String) {
@@ -188,8 +165,7 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
         override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
             Log.d(TAG, "他の端末からコネクションのリクエストを受け取った")
             this@NearBy.endpointId = endpointId
-            Nearby.getConnectionsClient(context)
-                .acceptConnection(endpointId, mPayloadCallback)
+            connectionsClient.acceptConnection(endpointId, mPayloadCallback)
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
@@ -200,9 +176,12 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
                     connectedEndpoints.add(endpointId)
                     Log.d(TAG, "通信成功")
                     Toast.makeText(context, "接続成功", Toast.LENGTH_SHORT).show()
-                    isConnected = true
-                    // 接続数の変更をリスナーに通知
+                    isConnected = connectedEndpoints.size >= maxConnections
                     connectionCountListener?.onConnectionCountChanged(connectedEndpoints.size)
+                    if (connectedEndpoints.size >= maxConnections) {
+                        connectionsClient.stopAdvertising()
+                        connectionsClient.stopDiscovery()
+                    }
                 }
                 ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
                     Log.d(TAG, "コネクションが拒否された時。通信はできない。")
@@ -217,7 +196,6 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
             Log.d(TAG, "コネクションが切断された")
             connectedEndpoints.remove(endpointId)
             isConnected = false
-            // 接続数の変更をリスナーに通知
             connectionCountListener?.onConnectionCountChanged(connectedEndpoints.size)
         }
     }
@@ -227,7 +205,7 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
             if (payload.type == Payload.Type.BYTES) {
                 val data = payload.asBytes() ?: return
                 val message = String(data)
-                Log.d(TAG, "メッセージを受信: $message")
+                //Log.d(TAG, "メッセージを受信: $message")
 
                 if (message.startsWith("TIME:")) {
                     val hitTimeString = message.removePrefix("TIME:")
@@ -240,6 +218,7 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
                 } else if (message.startsWith("ID:")) {
                     val id = message.removePrefix("ID:")
                     Log.d(TAG, "受信したID: $id")
+                     //judgeTiming.recordReceivedId(id) //これはIDの数数えるやつ
                     // IDの処理
                 } else if (message == "start" && !startSignalReceived.contains(endpointId)) {
                     startSignalReceived.add(endpointId)
@@ -255,41 +234,32 @@ class NearBy(private val context: Context,private val judgeTiming: JudgeTiming) 
         }
     }
 
-    fun initializeJudgeTiming(accEstimation: AccEstimation, tvjudge: TextView) {
-        JudgeTiming = JudgeTiming(accEstimation, tvjudge, this)
+    fun setJudgeTiming(judgeTiming: JudgeTiming) {
+        this.JudgeTiming = judgeTiming
     }
+
+    fun stopReceivingSignals(){
+        // 広告と発見を停止
+        connectionsClient.stopAdvertising()
+        connectionsClient.stopDiscovery()
+    }
+
     private fun checkStartSignals() {
         if (!::JudgeTiming.isInitialized) {
             Log.e(TAG, "JudgeTiming が初期化されていません")
             return
         }
-        if (startcount == 2) {
+        if (startcount == maxConnections) {
             Log.d(TAG, "5秒後に曲流すよ")
             android.os.Handler(Looper.getMainLooper()).postDelayed({
                 if (::playAudio.isInitialized) {
                     playAudio.playAudio(context)
-                    JudgeTiming.startJudging()
+                    val clientId = endpointId
+                    JudgeTiming.startJudging(clientId)
                 } else {
                     Log.e(TAG, "playAudioが初期化されていません")
                 }
             }, 5000)
         }
     }
-
-    private fun handleHitTime(hitTime: String) {
-        Log.d(TAG, "Received hit time: $hitTime")
-        // Convert hitTime to Long and process it as needed
-        val hitTimeLong = hitTime.toLongOrNull()
-        if (hitTimeLong != null) {
-            // Process the hit time
-        } else {
-            Log.d(TAG, "Invalid hit time format: $hitTime")
-        }
-    }
-
-    private fun handleId(id: String) {
-        Log.d(TAG, "Received ID: $id")
-        // Process the ID
-    }
-
 }

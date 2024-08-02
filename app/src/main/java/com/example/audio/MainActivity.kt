@@ -21,11 +21,11 @@ class MainActivity : AppCompatActivity() {
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
             tvgreat = findViewById(R.id.tvgreat),
-            nearBy = null // Temporarily set as null
+            nearBy = null
         )
 
         // NearByの初期化
-        nearBy = NearBy(this, judgeTiming)
+        nearBy = NearBy(this,judgeTiming)
 
         // JudgeTimingにNearByを設定
         judgeTiming.nearBy = nearBy
@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
-                replace(R.id.container, MainFragment.newInstance(nearBy))
+                replace(R.id.container, MainFragment.newInstance(nearBy, judgeTiming))
             }
 
             // xmlで定義したパーミッションの権限を付与
@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.CHANGE_WIFI_STATE,
                 Manifest.permission.NEARBY_WIFI_DEVICES
             )
+
             // パーミッションの許可
             if (!EasyPermissions.hasPermissions(this, *permissions)) {
                 EasyPermissions.requestPermissions(this, "パーミッションに関する説明", 1, *permissions)
