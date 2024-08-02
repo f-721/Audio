@@ -34,7 +34,6 @@ class MainActivity : AppCompatActivity() {
         nearBy.setJudgeTiming(judgeTiming)
 
         playAudio = PlayAudio()
-
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(R.id.container, MainFragment.newInstance(nearBy))
