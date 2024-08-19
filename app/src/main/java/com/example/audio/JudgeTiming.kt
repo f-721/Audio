@@ -121,10 +121,9 @@ class JudgeTiming(
                 "MISS"
             }
         }
-// 判定結果を保存する
-        saveJudgement(clientId, judgement)
 
-        // 判定結果を通知する
+        saveJudgement(clientId,judgement)
+
         postJudgement(judgement)
 
         if (hitTime != 0L && (timeDiff < -1000 || timeDiff > 1000)) {
@@ -150,6 +149,19 @@ class JudgeTiming(
     fun getResultsForClient(clientId: String): JudgementCount? {
         return judgementCounts[clientId]
     }
+
+//    fun recordReceivedId(id: String) {
+//        Log.d("JudgeTiming", "Received ID: $id")
+//
+//        // 保存されたIDを使って判定を記録
+//        saveJudgement(id, determineJudgement())
+//    }
+//
+//    private fun determineJudgement(): String {
+//        // 判定のロジック（例えば、GREAT, GOOD, BAD, MISSなど）
+//        // ここでは仮にGREATを返す
+//        return "GREAT"
+//    }
 
     private fun postJudgement(judgement: String) {
         _judgement.postValue(judgement)

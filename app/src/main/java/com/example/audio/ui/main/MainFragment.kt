@@ -100,8 +100,8 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             Log.d("MainFragment", "btnresult button clicked")
 
             // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
-            val client1Results = judgeTiming.getResultsForClient("client1_id")
-            val client2Results = judgeTiming.getResultsForClient("client2_id")
+            val client1Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
+            val client2Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
 
             // 両方のデータがない場合
             if (client1Results == null && client2Results == null) {
