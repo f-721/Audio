@@ -53,7 +53,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         accEstimation = AccEstimation() // AccEstimation の初期化
 
         // JudgeTiming の初期化
-        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy)
+        judgeTime = JudgeTiming(accEstimation, tvjudge)
 
         // NearBy の初期化
         nearBy.initializeNearby()

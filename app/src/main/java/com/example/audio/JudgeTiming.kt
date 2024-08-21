@@ -15,8 +15,7 @@ import kotlinx.coroutines.launch
 
 class JudgeTiming(
     private val accEstimation: AccEstimation,
-    private val tvgreat: TextView,
-    nearBy: NearBy?
+    private val tvgreat: TextView
 ) : ViewModel() {
     lateinit var nearBy: NearBy
 
@@ -149,6 +148,8 @@ class JudgeTiming(
     fun getResultsForClient(clientId: String): JudgementCount? {
         return judgementCounts[clientId]
     }
+
+
 
 //    fun recordReceivedId(id: String) {
 //        Log.d("JudgeTiming", "Received ID: $id")

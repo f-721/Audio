@@ -20,12 +20,11 @@ class MainActivity : AppCompatActivity() {
         // JudgeTimingの初期化
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
-            tvgreat = findViewById(R.id.tvgreat),
-            nearBy = null
+            tvgreat = findViewById(R.id.tvgreat)
         )
 
         // NearByの初期化
-        nearBy = NearBy(this,judgeTiming)
+        nearBy = NearBy(this, judgeTiming)
 
         // JudgeTimingにNearByを設定
         judgeTiming.nearBy = nearBy
@@ -33,7 +32,10 @@ class MainActivity : AppCompatActivity() {
         // JudgeTimingをNearByに設定
         nearBy.setJudgeTiming(judgeTiming)
 
-        playAudio = PlayAudio()
+        // PlayAudioの初期化とNearByへのセット
+        playAudio = PlayAudio(nearBy)
+        nearBy.setPlayAudio(playAudio)  // PlayAudioをセット
+
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(R.id.container, MainFragment.newInstance(nearBy, judgeTiming))
