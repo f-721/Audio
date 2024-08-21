@@ -4,7 +4,7 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.util.Log
 
-class PlayAudio() {
+class PlayAudio(private val nearBy: NearBy) {
     private var mediaPlayer: MediaPlayer? = null
     private val TAG = "PlayAudio"
 
@@ -22,17 +22,10 @@ class PlayAudio() {
         mediaPlayer?.start()
     }
 
-//    fun stopAudio() {
-//        mediaPlayer?.stop()
-//        mediaPlayer?.release()
-//        mediaPlayer = null
-//    }
-
     // 曲が終了したときの処理
     private fun onAudioComplete() {
-        // ここに曲終了時の追加処理があれば書く
         Log.d(TAG, "曲の再生が完全に終了しました")
         // NearByの信号受信を終了する
-
+        nearBy.disconnect()
     }
 }

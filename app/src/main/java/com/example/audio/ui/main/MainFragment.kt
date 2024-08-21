@@ -17,7 +17,7 @@ import com.example.audio.JudgeTiming
 import com.example.audio.NearBy
 import com.example.audio.R
 
-class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTiming) : Fragment() {
+class MainFragment(private val nearBy: NearBy, private val judgeTiming: JudgeTiming) : Fragment() {
 
     private lateinit var tvjudge: TextView
     private lateinit var btnadvertise1: Button
@@ -53,7 +53,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         accEstimation = AccEstimation() // AccEstimation の初期化
 
         // JudgeTiming の初期化
-        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy)
+        judgeTime = JudgeTiming(accEstimation, tvjudge)
 
         // NearBy の初期化
         nearBy.initializeNearby()
@@ -99,17 +99,17 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         btnresult.setOnClickListener {
             Log.d("MainFragment", "btnresult button clicked")
 
-            // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
-            val client1Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
-            val client2Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+            // クライアント1とクライアント2の結果を取得
+            val client1Results = judgeTiming.getResultsForClient("$id")
+            val client2Results = judgeTiming.getResultsForClient("$id")
 
-            // 両方のデータがない場合
+            // 結果を表示するための文字列を作成
+            val results = StringBuilder()
             if (client1Results == null && client2Results == null) {
-                // 「データがありません」とメッセージを表示する
+                // 両方のデータがない場合
                 Toast.makeText(context, "データがありません", Toast.LENGTH_SHORT).show()
             } else {
-                // 結果を表示するための文字列を作成
-                val results = StringBuilder()
+                // クライアント1の結果
                 client1Results?.let {
                     results.append("クライアントデバイス1 (ID: ${it.id}):\n")
                     results.append("GREAT: ${it.greatCount}\n")
@@ -117,6 +117,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
                     results.append("BAD: ${it.badCount}\n")
                     results.append("MISS: ${it.missCount}\n\n")
                 }
+                // クライアント2の結果
                 client2Results?.let {
                     results.append("クライアントデバイス2 (ID: ${it.id}):\n")
                     results.append("GREAT: ${it.greatCount}\n")
@@ -133,12 +134,12 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
                     .show()
             }
         }
-
     }
 
     companion object {
-        fun newInstance(nearBy: NearBy,judgeTiming: JudgeTiming): MainFragment {
-            return MainFragment(nearBy,judgeTiming)
+        fun newInstance(nearBy: NearBy, judgeTiming: JudgeTiming): MainFragment {
+            return MainFragment(nearBy, judgeTiming)
         }
     }
 }
+
