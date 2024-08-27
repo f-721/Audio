@@ -12,6 +12,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.LinkedList
+import java.util.Queue
 
 class JudgeTiming(
     private val accEstimation: AccEstimation,
@@ -29,6 +31,8 @@ class JudgeTiming(
     private var job: Job? = null
     private var hitTime = 0L
     private var hasReceivedHitTime = false // データ受信フラグ
+
+    private val idQueue: Queue<String> = LinkedList()
 
     private val judgementCounts = mutableMapOf<String, JudgementCount>()
 
@@ -73,6 +77,13 @@ class JudgeTiming(
         } else {
             Log.d("JudgeTiming", "データは既に受信されました")
         }
+    }
+
+    fun recordid(clientId: String) {
+        // Process the received ID as needed
+        Log.d("JudgeTiming", "IDを受信: $clientId")
+        // Example: You might want to queue this ID or associate it with a hit time
+        idQueue.add(clientId)
     }
 
     fun startJudging(clientId: String) {
@@ -150,18 +161,6 @@ class JudgeTiming(
         return judgementCounts[clientId]
     }
 
-//    fun recordReceivedId(id: String) {
-//        Log.d("JudgeTiming", "Received ID: $id")
-//
-//        // 保存されたIDを使って判定を記録
-//        saveJudgement(id, determineJudgement())
-//    }
-//
-//    private fun determineJudgement(): String {
-//        // 判定のロジック（例えば、GREAT, GOOD, BAD, MISSなど）
-//        // ここでは仮にGREATを返す
-//        return "GREAT"
-//    }
 
     private fun postJudgement(judgement: String) {
         _judgement.postValue(judgement)

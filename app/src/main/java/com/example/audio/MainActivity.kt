@@ -20,7 +20,8 @@ class MainActivity : AppCompatActivity() {
         // JudgeTimingの初期化
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
-            tvgreat = findViewById(R.id.tvgreat)
+            tvgreat = findViewById(R.id.tvgreat),
+            nearBy = null
         )
 
         // NearByの初期化
