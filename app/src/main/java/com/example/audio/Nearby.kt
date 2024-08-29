@@ -20,6 +20,7 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
     private lateinit var playAudio: PlayAudio
     private var isConnected: Boolean = false
     private lateinit var endpointId: String
+    private var canReceive = true
 
     private lateinit var mediaPlayer: MediaPlayer
     private val connectedEndpoints = mutableListOf<String>()
@@ -45,6 +46,16 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
 
     private fun generateUniqueNickname(context: Context): String {
         return "atuo_${Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)}"
+    }
+
+    fun enableReceiving() {
+        canReceive = true
+        Log.d("Nearby", "受信が有効になりました")
+    }
+
+    fun disableReceiving() {
+        canReceive = false
+        Log.d("Nearby", "受信が無効になりました")
     }
 
     fun setConnectionCountListener(listener: ConnectionCountListener) {

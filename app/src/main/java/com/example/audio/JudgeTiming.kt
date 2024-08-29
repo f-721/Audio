@@ -18,9 +18,11 @@ import java.util.Queue
 class JudgeTiming(
     private val accEstimation: AccEstimation,
     private val tvgreat: TextView,
-    nearBy: NearBy?
+    var nearBy: NearBy? = null
 ) : ViewModel() {
-    lateinit var nearBy: NearBy
+
+    // 追加: IDがすでに受信されたかどうかを管理するフラグ
+    private var hasReceivedId = false
 
     // クライアントデバイスごとの結果を保存するためのマップ
     private val resultsMap = mutableMapOf<String, ResultData>()
@@ -80,10 +82,14 @@ class JudgeTiming(
     }
 
     fun recordid(clientId: String) {
-        // Process the received ID as needed
-        Log.d("JudgeTiming", "IDを受信: $clientId")
-        // Example: You might want to queue this ID or associate it with a hit time
-        idQueue.add(clientId)
+        if (!hasReceivedId) {
+            Log.d("JudgeTiming:recordid", "IDを受信: $clientId")
+            idQueue.add(clientId)
+            hasReceivedId = true // ID受信フラグを立てる
+            nearBy?.disableReceiving() // 受信を無効化
+        } else {
+            Log.d("JudgeTiming", "IDは既に受信されました")
+        }
     }
 
     fun startJudging(clientId: String) {
@@ -91,6 +97,8 @@ class JudgeTiming(
             while (isActive) {
                 delay(2000)
                 hasReceivedHitTime = false // フラグをリセットする
+                hasReceivedId = false      // ID受信フラグもリセットする
+//              nearBy?.enableReceiving()  // 受信を再度有効化
                 triggerJudging(clientId)
             }
         }
@@ -133,7 +141,9 @@ class JudgeTiming(
             }
         }
 
-        saveJudgement(clientId,judgement)
+        nearBy?.enableReceiving()  // 受信を再度有効化
+
+        saveJudgement(clientId, judgement)
 
         postJudgement(judgement)
 
@@ -160,7 +170,6 @@ class JudgeTiming(
     fun getResultsForClient(clientId: String): JudgementCount? {
         return judgementCounts[clientId]
     }
-
 
     private fun postJudgement(judgement: String) {
         _judgement.postValue(judgement)
