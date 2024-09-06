@@ -1,5 +1,6 @@
 package com.example.audio.ui.main
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -31,6 +32,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
     private lateinit var accEstimation: AccEstimation
     private lateinit var judgeTime: JudgeTiming
     private var mediaPlayer: MediaPlayer? = null
+    private lateinit var context: Context
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -54,7 +56,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         accEstimation = AccEstimation() // AccEstimation の初期化
 
         // JudgeTiming の初期化
-        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy)
+        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy, context)
 
         // NearBy の初期化
         nearBy.initializeNearby()
