@@ -216,8 +216,12 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
                 } else if (message.startsWith("ID:")) {
                     val id = message.removePrefix("ID:")
                     Log.d(TAG, "受信したID: $id")
-                    judgeTiming.recordid(id) //これはIDの数数えるやつ
-                    // IDの処理
+                    // 曲が再生されているか確認する
+                    if (::playAudio.isInitialized && playAudio.isPlaying()) {
+                        judgeTiming.recordid(id) // IDをカウントする
+                    } else {
+                        Log.d(TAG, "曲が再生されていないため、IDを無視しました: $id")
+                    }
                 } else if (message == "start" && !startSignalReceived.contains(endpointId)) {
                     startSignalReceived.add(endpointId)
                     Log.d(TAG, "受け取ったスタート信号 = ${startSignalReceived.size}")

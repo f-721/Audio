@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import com.example.audio.AccEstimation
 import com.example.audio.AccSensor
 import com.example.audio.JudgeTiming
+import android.media.MediaPlayer
 import com.example.audio.NearBy
 import com.example.audio.R
 
@@ -29,7 +30,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
     private lateinit var accSensor: AccSensor
     private lateinit var accEstimation: AccEstimation
     private lateinit var judgeTime: JudgeTiming
-
+    private var mediaPlayer: MediaPlayer? = null
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -66,6 +67,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             nearBy,
             judgeTime
         )
+
 
         nearBy.setConnectionCountListener(object : NearBy.ConnectionCountListener {
             override fun onConnectionCountChanged(count: Int) {
@@ -107,7 +109,11 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             if (client1Results == null && client2Results == null) {
                 // 「データがありません」とメッセージを表示する
                 Toast.makeText(context, "データがありません", Toast.LENGTH_SHORT).show()
+//                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
+//                mediaPlayer?.start()
             } else {
+                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
+                mediaPlayer?.start()
                 // 結果を表示するための文字列を作成
                 val results = StringBuilder()
                 client1Results?.let {
@@ -141,4 +147,12 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             return MainFragment(nearBy,judgeTiming)
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // MediaPlayerをリリース
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
 }
