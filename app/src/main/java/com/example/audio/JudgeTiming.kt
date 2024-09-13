@@ -38,8 +38,6 @@ class JudgeTiming(
     private var hitTime = 0L
     private var hasReceivedHitTime = false // データ受信フラグ
 
-    private val idQueue: Queue<String> = LinkedList()
-
     private val judgementCounts = mutableMapOf<String, JudgementCount>()
 
     // クライアントIDをヒットタイムとペアで保存
@@ -106,16 +104,28 @@ class JudgeTiming(
         }
     }
 
+    private fun playSound(resId: Int) {
+        mediaPlayer?.release()  // 既存の MediaPlayer を解放
+        mediaPlayer = MediaPlayer.create(context, resId)
+        mediaPlayer?.setOnCompletionListener {
+            it.release()  // 再生が完了したらリソースを解放
+        }
+        mediaPlayer?.start()
+    }
+
     fun startJudging(clientId: String) {
         job = viewModelScope.launch(Dispatchers.Main) {
             while (isActive) {
-                delay(1500)
+                //delay(1500)
+                delay(1000)
                 Log.d("JudgeTiming","⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
                 Log.d("JudgeTiming","音ゲー判定してるで！！")
                 Log.d("JudgeTiming","⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
+//                mediaPlayer = MediaPlayer.create(context, R.raw.timing) //判定の音源
+//                mediaPlayer?.start()
+                playSound(R.raw.timing)
                 hasReceivedHitTime = false // フラグをリセットする
                 hasReceivedId = false      // ID受信フラグもリセットする
-//              nearBy?.enableReceiving()  // 受信を再度有効化
                 triggerJudging(clientId)
             }
         }
@@ -129,40 +139,55 @@ class JudgeTiming(
         }
 
         val nowtime = System.currentTimeMillis()
-        val timeDiff =
-            if (hitTime != 0L)
-                (nowtime - hitTime) - 1000
-            else {
-                Long.MAX_VALUE //ヒット時刻がまだ設定されていない場合
-            }
 
+        // 1秒ごとの判定タイミングを生成
+        val lastJudgementTime = (nowtime / 1000) * 1000 // 最後の1秒間隔のタイムスタンプ
+        val timeDiff = (nowtime - hitTime) // 判定タイミングとヒットタイムとの差
 
         Log.d("JudgeTiming", "-------------------")
         Log.d("JudgeTiming", "ゲーム内判定時刻: $nowtime ms")
         Log.d("JudgeTiming", "ヒット時刻: $hitTime ms")
-        Log.d("JudgeTiming", "Time difference(ゲーム内判定時刻-ヒット時刻): $timeDiff ms")
+        Log.d("JudgeTiming", "Time difference(ヒット時刻との差): $timeDiff ms")
+
+        // 判定の範囲を更新した -250ms 〜 +250ms, -375ms 〜 -251ms および 251ms 〜 375ms に設定
+//        val judgement = when {
+//            timeDiff in -250..250 -> {
+//                tvgreat.text = "GREAT"
+//                Log.d("JudgeTiming", "GREATです")
+//                mediaPlayer = MediaPlayer.create(context, R.raw.greatsounds) //判定の音源
+//                mediaPlayer?.start()
+//                "GREAT"
+//            }
+//            timeDiff in -375..-251 || timeDiff in 251..375 -> {
+//                tvgreat.text = "GOOD"
+//                Log.d("JudgeTiming", "GOODです")
+//                mediaPlayer = MediaPlayer.create(context, R.raw.goodsounds)
+//                mediaPlayer?.start()
+//                "GOOD"
+//            }
+//            timeDiff in -499..-376 || timeDiff in 376..499 -> {
+//                tvgreat.text = "BAD"
+//                Log.d("JudgeTiming", "BADです")
+//                mediaPlayer = MediaPlayer.create(context, R.raw.badsounds)
+//                mediaPlayer?.start()
+//                "BAD"
+//            }
+//            else -> {
+//                tvgreat.text = "MISS"
+//                Log.d("JudgeTiming", "失敗(MISS)")
+//                mediaPlayer = MediaPlayer.create(context, R.raw.misssounds)
+//                mediaPlayer?.start()
+//                "MISS"
+//            }
+        // これ音ゲーとして不可能だ、難易度高スンギ
 
         val judgement = when {
             timeDiff in -500..500 -> {
-                tvgreat.text = "GREAT"
-                Log.d("JudgeTiming", "GREATです")
-                mediaPlayer = MediaPlayer.create(context, R.raw.greatsounds) //判定の音源
-                mediaPlayer?.start()
-                "GREAT"
-            }
-            timeDiff in -750..-501 || timeDiff in 501..750 -> {
                 tvgreat.text = "GOOD"
                 Log.d("JudgeTiming", "GOODです")
-                mediaPlayer = MediaPlayer.create(context, R.raw.goodsounds)
+                mediaPlayer = MediaPlayer.create(context, R.raw.greatsounds) //判定の音源
                 mediaPlayer?.start()
                 "GOOD"
-            }
-            timeDiff in -999..-751 || timeDiff in 751..999 -> {
-                tvgreat.text = "BAD"
-                Log.d("JudgeTiming", "BADです")
-                mediaPlayer = MediaPlayer.create(context, R.raw.badsounds)
-                mediaPlayer?.start()
-                "BAD"
             }
             else -> {
                 tvgreat.text = "MISS"
@@ -172,7 +197,6 @@ class JudgeTiming(
                 "MISS"
             }
         }
-
         nearBy?.enableReceiving()  // 受信を再度有効化
 
         clientId?.let {
@@ -180,14 +204,10 @@ class JudgeTiming(
         }
 
         postJudgement(judgement)
-
-//        if (hitTime != 0L && (timeDiff < -1000 || timeDiff > 1000)) {
-//            hitTime = 0L
-//            Log.d("JudgeTiming", "判定リセットします！")
-//        }
         Log.d("Judgement","一つの判定を終了")
         Log.d("JudgeTiming", "-------------------")
     }
+
 
     private fun saveJudgement(clientId: String, judgement: String) {
         if (clientId.contains("atuo_")) {
@@ -201,9 +221,10 @@ class JudgeTiming(
             }
 
             Log.d("JudgeTiming", "クライアントID: $clientId の判定結果を保存しました: $judgement")
-        } else {
-            Log.d("JudgeTiming", "クライアントID: $clientId に「atuo_」が含まれていないため、判定はカウントされませんでした")
         }
+//         else {
+//            Log.d("JudgeTiming", "クライアントID: $clientId に「atuo_」が含まれていないため、判定はカウントされませんでした")
+//        }
     }
 
 

@@ -1,6 +1,7 @@
 package com.example.audio
 
 import android.Manifest
+import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
@@ -16,26 +17,23 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        //ここでそれぞれのインスタンスの初期化を行う
 
-        // JudgeTimingの初期化
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
             tvgreat = findViewById(R.id.tvgreat),
-            nearBy = null
+            nearBy = null,
+            context = this
         )
 
-        // NearByの初期化
         nearBy = NearBy(this, judgeTiming)
 
-        // JudgeTimingにNearByを設定
         judgeTiming.nearBy = nearBy
 
-        // JudgeTimingをNearByに設定
         nearBy.setJudgeTiming(judgeTiming)
 
-        // PlayAudioの初期化とNearByへのセット
         playAudio = PlayAudio(nearBy)
-        nearBy.setPlayAudio(playAudio)  // PlayAudioをセット
+        nearBy.setPlayAudio(playAudio)
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {

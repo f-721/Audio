@@ -193,8 +193,12 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
         override fun onDisconnected(endpointId: String) {
             Log.d(TAG, "コネクションが切断された")
             connectedEndpoints.remove(endpointId)
+            startSignalReceived.clear()
+            startcount = 0  // Reset the start count
             isConnected = false
             connectionCountListener?.onConnectionCountChanged(connectedEndpoints.size)
+
+            Log.d(TAG, "スタート信号がリセットされました")
         }
     }
 
@@ -259,6 +263,7 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
         }
         if (startcount == maxConnections) {
             Log.d(TAG, "5秒後に曲流すよ")
+            Toast.makeText(context, "5秒後に始まります！", Toast.LENGTH_SHORT).show()
             android.os.Handler(Looper.getMainLooper()).postDelayed({
                 if (::playAudio.isInitialized) {
                     playAudio.playAudio(context)

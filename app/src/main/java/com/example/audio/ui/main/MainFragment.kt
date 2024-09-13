@@ -56,7 +56,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         accEstimation = AccEstimation() // AccEstimation の初期化
 
         // JudgeTiming の初期化
-        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy, context)
+        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy, requireContext())
 
         // NearBy の初期化
         nearBy.initializeNearby()
@@ -110,26 +110,28 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             // 両方のデータがない場合
             if (client1Results == null && client2Results == null) {
                 // 「データがありません」とメッセージを表示する
-                Toast.makeText(context, "データがありません", Toast.LENGTH_SHORT).show()
-//                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
-//                mediaPlayer?.start()
-            } else {
+                Toast.makeText(requireContext(), "データがありません", Toast.LENGTH_SHORT).show()
                 mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
+                //mediaPlayer = MediaPlayer.create(requireContext(), R.raw.levelup)
+                mediaPlayer?.start()
+            } else {
+                //mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
+                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.levelup) //おふざけ案
                 mediaPlayer?.start()
                 // 結果を表示するための文字列を作成
                 val results = StringBuilder()
                 client1Results?.let {
                     results.append("クライアントデバイス1 (ID: ${it.id}):\n")
-                    results.append("GREAT: ${it.greatCount}\n")
+                    //results.append("GREAT: ${it.greatCount}\n")
                     results.append("GOOD: ${it.goodCount}\n")
-                    results.append("BAD: ${it.badCount}\n")
+                    //results.append("BAD: ${it.badCount}\n")
                     results.append("MISS: ${it.missCount}\n\n")
                 }
                 client2Results?.let {
                     results.append("クライアントデバイス2 (ID: ${it.id}):\n")
-                    results.append("GREAT: ${it.greatCount}\n")
+                    //results.append("GREAT: ${it.greatCount}\n")
                     results.append("GOOD: ${it.goodCount}\n")
-                    results.append("BAD: ${it.badCount}\n")
+                    //results.append("BAD: ${it.badCount}\n")
                     results.append("MISS: ${it.missCount}\n")
                 }
 
