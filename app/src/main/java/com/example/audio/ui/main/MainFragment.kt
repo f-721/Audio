@@ -16,6 +16,7 @@ import com.example.audio.AccEstimation
 import com.example.audio.AccSensor
 import com.example.audio.JudgeTiming
 import android.media.MediaPlayer
+import android.view.Gravity
 import com.example.audio.NearBy
 import com.example.audio.R
 
@@ -104,13 +105,18 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             Log.d("MainFragment", "btnresult button clicked")
 
             // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
+           // val client1Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+            // val client1Results = judgeTiming.getResultsForClient("atuo_f2a8c8cbcb063633")
             val client1Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
             val client2Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+            //val client2Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
 
             // 両方のデータがない場合
             if (client1Results == null && client2Results == null) {
                 // 「データがありません」とメッセージを表示する
-                Toast.makeText(requireContext(), "データがありません", Toast.LENGTH_SHORT).show()
+                val toast = Toast.makeText(requireContext(), "データがありません!", Toast.LENGTH_SHORT)
+                toast.setGravity(Gravity.CENTER, 0, 0)  // 中央に表示する
+                toast.show()
                 mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
                 //mediaPlayer = MediaPlayer.create(requireContext(), R.raw.levelup)
                 mediaPlayer?.start()
@@ -137,7 +143,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
 
                 // 結果を画面に表示する
                 AlertDialog.Builder(requireContext())
-                    .setTitle("リズムゲーム結果")
+                    .setTitle("リズムゲーム結果(貢献度)")
                     .setMessage(results.toString())
                     .setPositiveButton("OK", null)
                     .show()

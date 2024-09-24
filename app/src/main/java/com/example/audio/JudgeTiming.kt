@@ -45,6 +45,10 @@ class JudgeTiming(
 
     private var mediaPlayer: MediaPlayer? = null
 
+    private var nowtime: Long = 0L // nowtime をクラスフィールドとして定義
+    private var judgementTiming: Long = 0L
+    val delayMillis: Long = 0L
+
     // クライアントごとの判定結果を保存するデータクラス
     data class JudgementCount(
         val id:String,
@@ -78,16 +82,6 @@ class JudgeTiming(
         accEstimation.lastHitTime.removeObserver(hitTimeObserver)
     }
 
-    fun recordHitTime(hitTime: Long) {
-        if (!hasReceivedHitTime) {
-            Log.d("JudgeTiming", "受信したヒット時刻: $hitTime")
-            this.hitTime = hitTime
-            hasReceivedHitTime = true // データ受信フラグを立てる
-        } else {
-            Log.d("JudgeTiming", "データは既に受信されました")
-        }
-    }
-
     fun recordid(clientId: String) {
         if (!hasReceivedId) {
             Log.d("JudgeTiming:recordid", "IDを受信: $clientId")
@@ -104,6 +98,16 @@ class JudgeTiming(
         }
     }
 
+    fun recordHitTime(hitTime: Long) {
+        if (!hasReceivedHitTime) {
+            Log.d("JudgeTiming", "受信したヒット時刻: $hitTime")
+            this.hitTime = hitTime
+            hasReceivedHitTime = true // データ受信フラグを立てる
+        } else {
+            Log.d("JudgeTiming", "データは既に受信されました")
+        }
+    }
+
     private fun playSound(resId: Int) {
         mediaPlayer?.release()  // 既存の MediaPlayer を解放
         mediaPlayer = MediaPlayer.create(context, resId)
@@ -113,23 +117,23 @@ class JudgeTiming(
         mediaPlayer?.start()
     }
 
-    fun startJudging(clientId: String) {
+    fun startJudging(clientId: String, bpm: Int) {
         job = viewModelScope.launch(Dispatchers.Main) {
+            val delayMillis = (110_000 / bpm).toLong() // Calculate delay based on BPM
             while (isActive) {
-                //delay(1500)
-                delay(1000)
-                Log.d("JudgeTiming","⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
-                Log.d("JudgeTiming","音ゲー判定してるで！！")
-                Log.d("JudgeTiming","⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
-//                mediaPlayer = MediaPlayer.create(context, R.raw.timing) //判定の音源
-//                mediaPlayer?.start()
+                delay(delayMillis)
+                Log.d("JudgeTiming", "⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
+                Log.d("JudgeTiming", "音ゲー判定してるで！！")
+                Log.d("JudgeTiming", "⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
+                nowtime = System.currentTimeMillis()
                 playSound(R.raw.timing)
-                hasReceivedHitTime = false // フラグをリセットする
-                hasReceivedId = false      // ID受信フラグもリセットする
+                hasReceivedHitTime = false // Reset flag
+                hasReceivedId = false      // Reset ID flag
                 triggerJudging(clientId)
             }
         }
     }
+
 
     fun triggerJudging(clientId: String) {
 
@@ -137,15 +141,11 @@ class JudgeTiming(
             Log.d("JudgeTiming", "IDが受信されていないため、判定をスキップします")
             return
         }
-
-        val nowtime = System.currentTimeMillis()
-
-        // 1秒ごとの判定タイミングを生成
-        val lastJudgementTime = (nowtime / 1000) * 1000 // 最後の1秒間隔のタイムスタンプ
-        val timeDiff = (nowtime - hitTime) // 判定タイミングとヒットタイムとの差
+        val Judgementtiming = nowtime + 0.5 * (delayMillis)
+        val timeDiff: Long = (Judgementtiming - hitTime).toLong() // 判定タイミングとヒットタイムとの差
 
         Log.d("JudgeTiming", "-------------------")
-        Log.d("JudgeTiming", "ゲーム内判定時刻: $nowtime ms")
+        Log.d("JudgeTiming", "ゲーム内判定時刻: $Judgementtiming ms")
         Log.d("JudgeTiming", "ヒット時刻: $hitTime ms")
         Log.d("JudgeTiming", "Time difference(ヒット時刻との差): $timeDiff ms")
 

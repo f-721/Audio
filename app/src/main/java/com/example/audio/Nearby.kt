@@ -261,18 +261,48 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
             Log.e(TAG, "JudgeTiming が初期化されていません")
             return
         }
+
         if (startcount == maxConnections) {
             Log.d(TAG, "5秒後に曲流すよ")
             Toast.makeText(context, "5秒後に始まります！", Toast.LENGTH_SHORT).show()
-            android.os.Handler(Looper.getMainLooper()).postDelayed({
+
+            val countdownSounds = listOf(
+                R.raw.countdown, // 1秒ごとに再生するカウントダウンの音
+                R.raw.countdown,
+                R.raw.countdown,
+                R.raw.countdown,
+                R.raw.start // 最後に再生する音
+            )
+
+            val handler = android.os.Handler(Looper.getMainLooper())
+            for (i in countdownSounds.indices) {
+                handler.postDelayed({
+                    playSound(countdownSounds[i]) // 1秒ごとにカウントダウン音とスタート音を再生
+                }, (i * 1000).toLong()) // 1秒ごとに遅延させる
+            }
+
+            // 5秒後に曲を再生
+            handler.postDelayed({
                 if (::playAudio.isInitialized) {
                     playAudio.playAudio(context)
                     val clientID = endpointId
-                    JudgeTiming.startJudging(clientID)
+                    val bpm = 110 // 使用する音楽のBPMを指定
+                    JudgeTiming.startJudging(clientID, bpm)
                 } else {
                     Log.e(TAG, "playAudioが初期化されていません")
                 }
             }, 5000)
         }
     }
+
+    // 音を再生するメソッド
+    private fun playSound(soundResId: Int) {
+        val mediaPlayer = MediaPlayer.create(context, soundResId)
+        mediaPlayer.setOnCompletionListener {
+            it.release() // 音が再生し終わったらMediaPlayerを解放
+        }
+        mediaPlayer.start() // 音を再生
+    }
+
+
 }
