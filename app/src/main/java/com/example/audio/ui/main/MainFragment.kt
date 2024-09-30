@@ -107,8 +107,8 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
            // val client1Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
             // val client1Results = judgeTiming.getResultsForClient("atuo_f2a8c8cbcb063633")
-            val client1Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
-            val client2Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+            val client1Results = judgeTiming.getResultsForClient("atuo_09703c16-5152-42aa-8817-269038ccd958")
+            val client2Results = judgeTiming.getResultsForClient("atuo_4258eebe-7751-4c82-a48d-49446bf9063b")
             //val client2Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
 
             // 両方のデータがない場合

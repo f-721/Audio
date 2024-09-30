@@ -263,11 +263,11 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
         }
 
         if (startcount == maxConnections) {
-            Log.d(TAG, "5秒後に曲流すよ")
-            Toast.makeText(context, "5秒後に始まります！", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "このテンポでラリーしてね")
+            Toast.makeText(context, "このテンポでラリーしてください", Toast.LENGTH_SHORT).show()
 
             val countdownSounds = listOf(
-                R.raw.countdown, // 1秒ごとに再生するカウントダウンの音
+                R.raw.countdown,
                 R.raw.countdown,
                 R.raw.countdown,
                 R.raw.countdown,
@@ -275,23 +275,24 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
             )
 
             val handler = android.os.Handler(Looper.getMainLooper())
+            val bpm = 72.75 // 使用する音楽のBPM
+            val delayMillis = (60_000 / bpm).toLong()
+
             for (i in countdownSounds.indices) {
                 handler.postDelayed({
-                    playSound(countdownSounds[i]) // 1秒ごとにカウントダウン音とスタート音を再生
-                }, (i * 1000).toLong()) // 1秒ごとに遅延させる
+                    playSound(countdownSounds[i]) // delayMillisごとにカウントダウン音を再生
+                }, (i * delayMillis))
             }
 
-            // 5秒後に曲を再生
             handler.postDelayed({
                 if (::playAudio.isInitialized) {
                     playAudio.playAudio(context)
                     val clientID = endpointId
-                    val bpm = 110 // 使用する音楽のBPMを指定
-                    JudgeTiming.startJudging(clientID, bpm)
+                    JudgeTiming.startJudging(clientID)
                 } else {
                     Log.e(TAG, "playAudioが初期化されていません")
                 }
-            }, 5000)
+            }, delayMillis * countdownSounds.size)
         }
     }
 
