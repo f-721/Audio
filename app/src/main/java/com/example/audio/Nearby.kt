@@ -2,12 +2,14 @@ package com.example.audio
 
 import android.content.Context
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
+import kotlinx.coroutines.*
 
 class NearBy(private val context: Context, private var judgeTiming: JudgeTiming) {
     var SERVICE_ID = "atuo.nearby"
@@ -87,66 +89,6 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
             }
     }
 
-    fun advertise2() {
-        if (connectedEndpoints.size >= maxConnections) {
-            Log.d(TAG, "既に最大接続数に達しています")
-            return
-        }
-        Log.d(TAG, "advertise2をタップ!?!?!?")
-        connectionsClient
-            .startAdvertising(
-                nickname,
-                SERVICE_ID,
-                mConnectionLifecycleCallback,
-                AdvertisingOptions(Strategy.P2P_STAR)
-            )
-            .addOnSuccessListener {
-                Log.d(TAG, "Advertise2開始したwww")
-            }
-            .addOnFailureListener {
-                Log.d(TAG, "Advertise2できなかった!!!!")
-            }
-    }
-
-    fun discovery() {
-        if (connectedEndpoints.size >= maxConnections) {
-            Log.d(TAG, "既に最大接続数に達しています")
-            return
-        }
-        Log.d(TAG, "Discoveryをタップ")
-        connectionsClient
-            .startDiscovery(
-                SERVICE_ID,
-                mEndpointDiscoveryCallback,
-                DiscoveryOptions(Strategy.P2P_STAR)
-            )
-            .addOnSuccessListener {
-                Log.d(TAG, "Discovery開始した")
-            }
-            .addOnFailureListener {
-                Log.d(TAG, "Discovery開始できなかった")
-            }
-    }
-
-    fun discovery2() {
-        if (connectedEndpoints.size >= maxConnections) {
-            Log.d(TAG, "既に最大接続数に達しています")
-            return
-        }
-        Log.d(TAG, "Discovery2をタップ")
-        connectionsClient
-            .startDiscovery(
-                SERVICE_ID,
-                mEndpointDiscoveryCallback,
-                DiscoveryOptions(Strategy.P2P_STAR)
-            )
-            .addOnSuccessListener {
-                Log.d(TAG, "Discovery2開始した")
-            }
-            .addOnFailureListener {
-                Log.d(TAG, "Discovery2開始できなかった")
-            }
-    }
 
     private val mEndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, discoveredEndpointInfo: DiscoveredEndpointInfo) {
@@ -256,6 +198,18 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
         this.JudgeTiming = judgeTiming
     }
 
+    private fun playAudioAsync(audioFile: String) {
+        GlobalScope.launch(Dispatchers.IO) {
+            // 音源再生処理
+            val mediaPlayer = MediaPlayer.create(context, Uri.parse(audioFile))
+            mediaPlayer.start()
+
+            mediaPlayer.setOnCompletionListener {
+                mediaPlayer.release()
+            }
+        }
+    }
+
     private fun checkStartSignals() {
         if (!::JudgeTiming.isInitialized) {
             Log.e(TAG, "JudgeTiming が初期化されていません")
@@ -270,8 +224,7 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
                 R.raw.countdown,
                 R.raw.countdown,
                 R.raw.countdown,
-                R.raw.countdown,
-                R.raw.start // 最後に再生する音
+                R.raw.countdown
             )
 
             val handler = android.os.Handler(Looper.getMainLooper())
@@ -286,7 +239,7 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
 
             handler.postDelayed({
                 if (::playAudio.isInitialized) {
-                    playAudio.playAudio(context)
+                    playAudio.playAudio(context) //音ゲーにおける音源を再生
                     val clientID = endpointId
                     JudgeTiming.startJudging(clientID)
                 } else {

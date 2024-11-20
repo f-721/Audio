@@ -14,49 +14,15 @@
 
     <Button
         android:id="@+id/btnadvertise"
-        android:layout_width="97dp"
-        android:layout_height="56dp"
-        android:text="ADV1"
+        android:layout_width="122dp"
+        android:layout_height="84dp"
+        android:text="接続"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.168"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btndiscovery"
-        android:layout_width="97dp"
-        android:layout_height="56dp"
-        android:text="DIS1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.828"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btndiscovery2"
-        android:layout_width="97dp"
-        android:layout_height="56dp"
-        android:text="DIS2"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.828"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.653" />
-
-    <Button
-        android:id="@+id/btnadvertise2"
-        android:layout_width="97dp"
-        android:layout_height="56dp"
-        android:text="ADV2"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.168"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.653" />
+        app:layout_constraintVertical_bias="0.687" />
 
     <TextView
         android:id="@+id/tvgreat"

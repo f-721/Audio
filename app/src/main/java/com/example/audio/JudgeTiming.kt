@@ -47,6 +47,29 @@ class JudgeTiming(
     private var delayMillis: Long = 0L
     var misscount = 0
 
+    // 事前にロードしておく MediaPlayer インスタンス
+    private var goodSoundPlayer: MediaPlayer? = null
+    private var missSoundPlayer: MediaPlayer? = null
+    private var timingSoundPlayer: MediaPlayer? = null
+
+    init {
+        // 音声ファイルを事前にロードして準備
+        goodSoundPlayer = MediaPlayer.create(context, R.raw.greatsounds)
+        missSoundPlayer = MediaPlayer.create(context, R.raw.misssounds)
+        timingSoundPlayer = MediaPlayer.create(context, R.raw.timing)
+
+        // 再生が完了したらリソースを解放しないようにリスナーを設定
+        goodSoundPlayer?.setOnCompletionListener {
+            it.seekTo(0) // 再生位置を最初に戻す
+        }
+        missSoundPlayer?.setOnCompletionListener {
+            it.seekTo(0)
+        }
+        timingSoundPlayer?.setOnCompletionListener {
+            it.seekTo(0)
+        }
+    }
+
     // クライアントごとの判定結果を保存するデータクラス
     data class JudgementCount(
         val id:String,
@@ -100,34 +123,40 @@ class JudgeTiming(
         if (!hasReceivedHitTime) {
             Log.d("JudgeTiming", "受信したヒット時刻: $hitTime")
             this.hitTime = hitTime
+            this.nowtime = System.currentTimeMillis()
             hasReceivedHitTime = true // データ受信フラグを立てる
         } else {
             Log.d("JudgeTiming", "データは既に受信されました")
         }
     }
 
-    private fun playSound(resId: Int) {
-        mediaPlayer?.release()  // 既存の MediaPlayer を解放
-        mediaPlayer = MediaPlayer.create(context, resId)
-        mediaPlayer?.setOnCompletionListener {
-            it.release()  // 再生が完了したらリソースを解放
-        }
-        mediaPlayer?.start()
-    }
+    private fun playSoundAsync(soundType: String) {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val player = when (soundType) {
+                    "GOOD" -> MediaPlayer.create(context, R.raw.greatsounds)
+                    "MISS" -> MediaPlayer.create(context, R.raw.misssounds)
+                    "TIMING" -> MediaPlayer.create(context, R.raw.timing)
+                    else -> null
+                }
 
-    private fun playSoundAsync(resId: Int) {
-        // 既存の MediaPlayer を解放
-        mediaPlayer?.release()
-
-        // 音声再生を非同期で実行
-        viewModelScope.launch(Dispatchers.IO) {
-            mediaPlayer = MediaPlayer.create(context, resId)
-            mediaPlayer?.setOnCompletionListener {
-                it.release()  // 再生が完了したらリソースを解放
+                player?.let {
+                    it.start()
+                    Log.d("JudgeTiming", "サウンド再生が即時に開始されました: $soundType")
+                    it.setOnCompletionListener {
+                        it.release()
+                    }
+                } ?: run {
+                    Log.e("JudgeTiming", "音声プレイヤーが準備されていません: $soundType")
+                }
+            } catch (e: Exception) {
+                Log.e("JudgeTiming", "サウンド再生中にエラーが発生しました", e)
             }
-            mediaPlayer?.start()
         }
     }
+
+
+
 
     fun startJudging(clientId: String) {
         job = viewModelScope.launch(Dispatchers.Main) {
@@ -138,13 +167,14 @@ class JudgeTiming(
                 // 0.5 * delayMillis 前に判定を行うための基準時間を計算
                 val judgingThreshold = 0.5 * delayMillis
                 delay(delayMillis)
-                Log.d("Judgement","delayMills = $delayMillis")
+                Log.d("Judgement","delayMills(判定周期) = $delayMillis")
                 Log.d("JudgeTiming", "⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
-                Log.d("JudgeTiming", "音ゲー判定してるで！！")
+                Log.d("JudgeTiming", "音ゲー判定中")
                 Log.d("JudgeTiming", "⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎⭐︎")
                 nowtime = System.currentTimeMillis()
-                Log.d("JudgeTiming", "nowtime = $nowtime ms")
-                playSoundAsync(R.raw.timing)
+                Log.d("JudgeTiming", "nowtime(判定時の現在時刻)= $nowtime ms")
+                playSoundAsync("TIMING")
+                Log.d("JudgeTiming","ぴっ")
                 nearBy?.enableReceiving()  // 受信を再度有効化
                 hasReceivedHitTime = false // Reset flag
                 hasReceivedId = false      // Reset ID flag
@@ -172,11 +202,22 @@ class JudgeTiming(
             return
         }
 
-        val Judgementtiming = nowtime //+ 0.5 * (delayMillis)
-        val timeDiff: Long = (Judgementtiming - hitTime).toLong() // 判定タイミングとヒットタイムとの差
+//        val Judgementtiming = nowtime + 0.5 * (delayMillis)
+        var timeDiff: Long = (nowtime - hitTime) // 判定タイミングとヒットタイムとの差
+
+//         特定のクライアントIDなら +1500ms を timeDiff に加算
+//        if (clientId == "atuo_2b77e0851dd47474") {
+//            timeDiff += 1400
+//        }
+//
+//        if (clientId == "atuo_264ac95f5a0c0fbc") {
+//            timeDiff += 55
+//        }
+
+
 
         Log.d("JudgeTiming", "-------------------")
-        Log.d("JudgeTiming", "ゲーム内判定時刻: $Judgementtiming ms")
+        Log.d("JudgeTiming", "ゲーム内判定時刻(nowtime): $nowtime ms")
         Log.d("JudgeTiming", "ヒット時刻: $hitTime ms")
         Log.d("JudgeTiming", "Time difference(ヒット時刻との差): $timeDiff ms")
 
@@ -190,13 +231,15 @@ class JudgeTiming(
             timeDiff in lowerBound..upperBound -> {
                 tvgreat.text = "GOOD"
                 Log.d("JudgeTiming", "GOODです")
-                playSoundAsync(R.raw.greatsounds)
+                playSoundAsync("GOOD")
+                Log.d("JudgeTiming","シャン")
                 "GOOD"
             }
             else -> {
                 tvgreat.text = "MISS"
                 Log.d("JudgeTiming", "失敗(MISS)")
-                playSoundAsync(R.raw.misssounds)
+                playSoundAsync("MISS")
+                Log.d("JudgeTiming","パフ")
                 "MISS"
             }
         }
@@ -210,16 +253,12 @@ class JudgeTiming(
         Log.d("JudgeTiming", "-------------------⭐︎")
     }
 
-
-
     private fun saveJudgement(clientId: String, judgement: String) {
         if (clientId.contains("atuo_")) {
             val count = judgementCounts.getOrPut(clientId) { JudgementCount(id = clientId) }
 
             when (judgement) {
-                //"GREAT" -> count.greatCount++
                 "GOOD" -> count.goodCount++
-                //"BAD" -> count.badCount++
                 "MISS" -> count.missCount++
             }
 
@@ -242,6 +281,10 @@ class JudgeTiming(
 
     override fun onCleared() {
         super.onCleared()
+        //リソース解放
+        goodSoundPlayer?.release()
+        missSoundPlayer?.release()
+        timingSoundPlayer?.release()
         stopJudging()
     }
 }
