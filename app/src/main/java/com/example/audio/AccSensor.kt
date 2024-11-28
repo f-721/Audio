@@ -19,19 +19,6 @@ public class AccSensor(
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val AccSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
 
-    // 取得開始
-//    fun start() {
-//        Log.d("AccSensor", "Music Start")
-//        sensorManager.registerListener(this, AccSensor, SensorManager.SENSOR_DELAY_UI)
-//        judgeTiming.startJudging()
-//    }
-
-    // 取得終了
-//    fun stop() {
-//        sensorManager.unregisterListener(this)
-//        judgeTiming.stopJudging()
-//    }
-
     // センサーからのデータを取得
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_LINEAR_ACCELERATION) {

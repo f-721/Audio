@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import android.media.MediaPlayer
+import kotlinx.coroutines.GlobalScope
 
 class JudgeTiming(
     private val accEstimation: AccEstimation,
@@ -73,9 +74,7 @@ class JudgeTiming(
     // クライアントごとの判定結果を保存するデータクラス
     data class JudgementCount(
         val id:String,
-        var greatCount: Int = 0,
         var goodCount: Int = 0,
-        var badCount: Int = 0,
         var missCount: Int = 0
     )
 
@@ -119,6 +118,12 @@ class JudgeTiming(
         }
     }
 
+    fun clearResultsForClient(clientId: String) {
+        // clientId のデータを削除する
+        judgementCounts.remove(clientId)
+        Log.d("JudgeTiming", "クライアント $clientId のデータを削除しました")
+    }
+
     fun recordHitTime(hitTime: Long) {
         if (!hasReceivedHitTime) {
             Log.d("JudgeTiming", "受信したヒット時刻: $hitTime")
@@ -131,21 +136,19 @@ class JudgeTiming(
     }
 
     private fun playSoundAsync(soundType: String) {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val player = when (soundType) {
-                    "GOOD" -> MediaPlayer.create(context, R.raw.greatsounds)
-                    "MISS" -> MediaPlayer.create(context, R.raw.misssounds)
-                    "TIMING" -> MediaPlayer.create(context, R.raw.timing)
+                    "GOOD" -> goodSoundPlayer
+                    "MISS" -> missSoundPlayer
+                    "TIMING" -> timingSoundPlayer
                     else -> null
                 }
 
                 player?.let {
+                    it.seekTo(0) // 再生位置をリセット
                     it.start()
                     Log.d("JudgeTiming", "サウンド再生が即時に開始されました: $soundType")
-                    it.setOnCompletionListener {
-                        it.release()
-                    }
                 } ?: run {
                     Log.e("JudgeTiming", "音声プレイヤーが準備されていません: $soundType")
                 }
@@ -159,8 +162,8 @@ class JudgeTiming(
 
 
     fun startJudging(clientId: String) {
-        job = viewModelScope.launch(Dispatchers.Main) {
-            val bpm = 72.75
+        job = viewModelScope.launch(Dispatchers.Default) {
+            val bpm = 69
 
             while (isActive) {
                 delayMillis = (60_000 / bpm).toLong() //判定タイミングはここいじって変えましょう
@@ -174,17 +177,18 @@ class JudgeTiming(
                 nowtime = System.currentTimeMillis()
                 Log.d("JudgeTiming", "nowtime(判定時の現在時刻)= $nowtime ms")
                 playSoundAsync("TIMING")
-                Log.d("JudgeTiming","ぴっ")
+
+
                 nearBy?.enableReceiving()  // 受信を再度有効化
                 hasReceivedHitTime = false // Reset flag
                 hasReceivedId = false      // Reset ID flag
 
                 // 判定タイミングの0.5 * delayMillis秒前かどうかを確認
-                if (System.currentTimeMillis() < (nowtime + judgingThreshold)) {
-                    Log.d("JudgeTiming", "まだ判定タイミング前なので、triggerJudgingをスキップします")
-                    continue
-                }
-                triggerJudging(clientId)
+//                if (System.currentTimeMillis() < (nowtime + judgingThreshold)) {
+//                    Log.d("JudgeTiming", "まだ判定タイミング前なので、triggerJudgingをスキップします")
+//                    continue
+//                }
+//                triggerJudging(clientId)
             }
         }
     }
@@ -197,21 +201,24 @@ class JudgeTiming(
             Log.d("JudgeTiming", "IDが受信されていないため、判定をスキップします")
             misscount += 1
             Log.d("JudgeTiming","うおおおおお $misscount")
-            nowtime = System.currentTimeMillis() // nowtimeをリセット
-            Log.d("JudgeTiming", "nowtimeをリセットしました: $nowtime")
+//            nowtime = System.currentTimeMillis() // nowtimeをリセット
+//            Log.d("JudgeTiming", "nowtimeをリセットしました: $nowtime")
             return
         }
 
 //        val Judgementtiming = nowtime + 0.5 * (delayMillis)
         var timeDiff: Long = (nowtime - hitTime) // 判定タイミングとヒットタイムとの差
 
-//         特定のクライアントIDなら +1500ms を timeDiff に加算
-//        if (clientId == "atuo_2b77e0851dd47474") {
-//            timeDiff += 1400
-//        }
+        //ここの時間のズレの値は日が経つにつれて大きくなっていきます(多分)
+        //その際は全てのデバイスを再起動して接続し直すことで改善します
+
+//         //特定のクライアントIDなら +1500ms を timeDiff に加算
+        if (clientId == "atuo_2b77e0851dd47474") {
+            timeDiff -= 1000
+        }
 //
 //        if (clientId == "atuo_264ac95f5a0c0fbc") {
-//            timeDiff += 55
+//            timeDiff -= 8
 //        }
 
 
@@ -229,14 +236,18 @@ class JudgeTiming(
 
         val judgement = when {
             timeDiff in lowerBound..upperBound -> {
-                tvgreat.text = "GOOD"
+                viewModelScope.launch(Dispatchers.Main){
+                    tvgreat.text = "GOOD"
+                }
                 Log.d("JudgeTiming", "GOODです")
                 playSoundAsync("GOOD")
                 Log.d("JudgeTiming","シャン")
                 "GOOD"
             }
             else -> {
-                tvgreat.text = "MISS"
+                viewModelScope.launch(Dispatchers.Main) {
+                    tvgreat.text = "MISS"
+                }
                 Log.d("JudgeTiming", "失敗(MISS)")
                 playSoundAsync("MISS")
                 Log.d("JudgeTiming","パフ")

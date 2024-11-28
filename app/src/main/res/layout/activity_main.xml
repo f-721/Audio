@@ -60,4 +60,28 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.857" />
 
+    <Button
+        android:id="@+id/btndouki"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="同期"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.13" />
+
+    <Button
+        android:id="@+id/btnresultdelete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Result削除"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.945"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.042" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

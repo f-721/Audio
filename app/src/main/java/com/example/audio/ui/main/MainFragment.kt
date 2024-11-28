@@ -24,16 +24,18 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
 
     private lateinit var tvjudge: TextView
     private lateinit var btnadvertise1: Button
-    private lateinit var btnadvertise2: Button
-    private lateinit var btndiscovery1: Button
-    private lateinit var btndiscovery2: Button
+    private lateinit var btndouki: Button
     private lateinit var btnresult: Button
     private lateinit var CountTextview: TextView
     private lateinit var accSensor: AccSensor
     private lateinit var accEstimation: AccEstimation
     private lateinit var judgeTime: JudgeTiming
     private var mediaPlayer: MediaPlayer? = null
-    private lateinit var context: Context
+    private  lateinit var btnresultdelete: Button
+
+    // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
+    private var client1Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+    private var client2Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -41,15 +43,39 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         val rootView = inflater.inflate(R.layout.activity_main, container, false)
 
         btnadvertise1 = rootView.findViewById(R.id.btnadvertise)
-//        btnadvertise2 = rootView.findViewById(R.id.btnadvertise2)
-//        btndiscovery1 = rootView.findViewById(R.id.btndiscovery)
-//        btndiscovery2 = rootView.findViewById(R.id.btndiscovery2)
+        btndouki = rootView.findViewById(R.id.btndouki)
         btnresult = rootView.findViewById(R.id.btnresult)
         tvjudge = rootView.findViewById(R.id.tvgreat)
         CountTextview = rootView.findViewById(R.id.CountTextview)
+        btnresultdelete = rootView.findViewById(R.id.btnresultdelete)
 
         return rootView
     }
+
+    private fun onBtndoukiClicked() {
+        if (nearBy.isConnected()) { // 接続状態を確認
+            Log.d("MainFragment", "接続されています。時刻同期を開始します。")
+            Toast.makeText(requireContext(), "時刻同期を開始", Toast.LENGTH_SHORT).show()
+            synchronizeTime() // 時刻同期の実行
+        } else {
+            Log.d("MainFragment", "接続されていません。接続を確認してください。")
+            Toast.makeText(requireContext(), "接続を確認してください", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun synchronizeTime() {
+        // NearBy から現在時刻をクライアントに送信
+        try {
+            nearBy.sendCurrentTimeToClients()
+            Toast.makeText(requireContext(), "時刻同期が完了しました", Toast.LENGTH_SHORT).show()
+            Log.d("MainFragment", "時刻同期が完了しました")
+        } catch (e: Exception) {
+            // エラーが発生した場合の処理
+            Toast.makeText(requireContext(), "時刻同期に失敗しました: ${e.message}", Toast.LENGTH_SHORT).show()
+            Log.e("MainFragment", "時刻同期に失敗しました", e)
+        }
+    }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -86,30 +112,16 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
             nearBy.advertise()
         }
 
-//        btnadvertise2.setOnClickListener {
-//            Log.d("MainFragment", "advertise button 2 clicked")
-//            nearBy.advertise2()
-//        }
-//
-//        btndiscovery1.setOnClickListener {
-//            Log.d("MainFragment", "discovery button 1 clicked")
-//            nearBy.discovery()
-//        }
-//
-//        btndiscovery2.setOnClickListener {
-//            Log.d("MainFragment", "discovery button 2 clicked")
-//            nearBy.discovery2()
-//        }
+        btndouki.setOnClickListener{
+            onBtndoukiClicked()
+        }
 
         btnresult.setOnClickListener {
             Log.d("MainFragment", "btnresult button clicked")
 
             // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
-            val client1Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
-            // val client1Results = judgeTiming.getResultsForClient("atuo_f2a8c8cbcb063633")
-            //val client1Results = judgeTiming.getResultsForClient("atuo_09703c16-5152-42aa-8817-269038ccd958")
-           // val client2Results = judgeTiming.getResultsForClient("atuo_4258eebe-7751-4c82-a48d-49446bf9063b")
-            val client2Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
+             client1Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+             client2Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
 
             // 両方のデータがない場合
             if (client1Results == null && client2Results == null) {
@@ -146,6 +158,32 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
                     .setTitle("リズムゲーム結果(貢献度)")
                     .setMessage(results.toString())
                     .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+
+        btnresultdelete.setOnClickListener{
+            if(client1Results == null && client2Results == null){
+                val toast = Toast.makeText(requireContext(), "データがありません!", Toast.LENGTH_SHORT)
+                toast.setGravity(Gravity.CENTER, 0, 0)  // 中央に表示する
+                toast.show()
+            }else{
+                // データが存在する場合
+                AlertDialog.Builder(requireContext())
+                    .setTitle("データ削除の確認")
+                    .setMessage("データを削除しますか？")
+                    .setPositiveButton("削除") { _, _ ->
+                        // JudgeTiming のデータを削除
+                        judgeTiming.clearResultsForClient("atuo_2b77e0851dd47474") // クライアント1のデータを削除
+                        judgeTiming.clearResultsForClient("atuo_264ac95f5a0c0fbc") // クライアント2のデータを削除
+
+                        // 確認メッセージを表示
+                        val toast = Toast.makeText(requireContext(), "データを削除しました!", Toast.LENGTH_SHORT)
+                        toast.setGravity(Gravity.CENTER, 0, 0) // 中央に表示する
+                        toast.show()
+                        Log.d("MainFragment", "データを削除しました")
+                    }
+                    .setNegativeButton("キャンセル", null)
                     .show()
             }
         }

@@ -39,6 +39,20 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
         this.playAudio = playAudio
     }
 
+    fun isConnected(): Boolean {
+        return connectedEndpoints.size >= maxConnections
+    }
+
+    fun sendCurrentTimeToClients() {
+        val currentTimeMillis = System.currentTimeMillis()
+        val message = "TIME:$currentTimeMillis"
+
+        connectedEndpoints.forEach { endpointId ->
+            connectionsClient.sendPayload(endpointId, Payload.fromBytes(message.toByteArray()))
+            Log.d("Nearby", "時刻を送信しました: $message to $endpointId")
+        }
+    }
+
 
     interface ConnectionCountListener {
         fun onConnectionCountChanged(count: Int)
@@ -223,12 +237,11 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
             val countdownSounds = listOf(
                 R.raw.countdown,
                 R.raw.countdown,
-                R.raw.countdown,
                 R.raw.countdown
             )
 
             val handler = android.os.Handler(Looper.getMainLooper())
-            val bpm = 72.75 // 使用する音楽のBPM
+            val bpm = 69 // 使用する音楽のBPM
             val delayMillis = (60_000 / bpm).toLong()
 
             for (i in countdownSounds.indices) {
