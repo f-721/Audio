@@ -2,16 +2,16 @@ package com.example.audio
 
 import android.content.Context
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import kotlinx.coroutines.*
 
-class NearBy(private val context: Context, private var judgeTiming: JudgeTiming) {
+class NearBy(private val context: Context, private var judgeTiming: JudgeTiming?) {
     var SERVICE_ID = "atuo.nearby"
     var nickname: String
     val TAG = "Nearby"
@@ -29,7 +29,6 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
     private val maxConnections = 2
 
     init {
-//        playAudio = PlayAudio()
         connectionsClient = Nearby.getConnectionsClient(context)
         nickname = generateUniqueNickname(context)
     }
@@ -61,7 +60,12 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
     private var connectionCountListener: ConnectionCountListener? = null
 
     private fun generateUniqueNickname(context: Context): String {
-        return "atuo_${Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)}"
+        return "atuo_${
+            Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ANDROID_ID
+            )
+        }"
     }
 
     fun enableReceiving() {
@@ -105,7 +109,10 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
 
 
     private val mEndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
-        override fun onEndpointFound(endpointId: String, discoveredEndpointInfo: DiscoveredEndpointInfo) {
+        override fun onEndpointFound(
+            endpointId: String,
+            discoveredEndpointInfo: DiscoveredEndpointInfo
+        ) {
             Log.d(TAG, "Advertise側を発見した")
             connectionsClient.requestConnection(nickname, endpointId, mConnectionLifecycleCallback)
         }
@@ -137,9 +144,11 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
                         connectionsClient.stopDiscovery()
                     }
                 }
+
                 ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
                     Log.d(TAG, "コネクションが拒否された時。通信はできない。")
                 }
+
                 ConnectionsStatusCodes.STATUS_ERROR -> {
                     Log.d(TAG, "エラーでコネクションが確立できない時。通信はできない。")
                 }
@@ -169,7 +178,7 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
                     val hitTimeString = message.removePrefix("TIME:")
                     val hitTime = hitTimeString.toLongOrNull()
                     if (hitTime != null) {
-                        judgeTiming.recordHitTime(hitTime)
+                        judgeTiming?.recordHitTime(hitTime)
                     } else {
                         Log.d(TAG, "無効なヒット時刻形式: $hitTimeString")
                     }
@@ -178,7 +187,7 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
                     Log.d(TAG, "受信したID: $id")
                     // 曲が再生されているか確認する
                     if (::playAudio.isInitialized && playAudio.isPlaying()) {
-                        judgeTiming.recordid(id) // IDをカウントする
+                        judgeTiming?.recordid(id) // IDをカウントする
                     } else {
                         Log.d(TAG, "曲が再生されていないため、IDを無視しました: $id")
                     }
@@ -196,39 +205,36 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
         }
     }
 
-    fun disconnect(){
-        connectionsClient.stopAllEndpoints()
-        // Stop judging
-        if (::JudgeTiming.isInitialized) {
-            JudgeTiming.stopJudging()
-            Log.d("NearBy", "JudgeTiming stopped.")
-        } else {
-            Log.d("NearBy", "JudgeTiming was not initialized.")
-        }
-
-        Log.d("NearBy", "悪りぃけど接続、勝手に切らせてもらうぜBaby...")
-    }
     fun setJudgeTiming(judgeTiming: JudgeTiming) {
-        this.JudgeTiming = judgeTiming
+        this.judgeTiming = judgeTiming
     }
 
-    private fun playAudioAsync(audioFile: String) {
-        GlobalScope.launch(Dispatchers.IO) {
-            // 音源再生処理
-            val mediaPlayer = MediaPlayer.create(context, Uri.parse(audioFile))
-            mediaPlayer.start()
-
-            mediaPlayer.setOnCompletionListener {
-                mediaPlayer.release()
-            }
+    fun initializeJudgeTiming(
+        accEstimation: AccEstimation,
+        tvjudge: TextView,
+        playAudio: PlayAudio
+    ) {
+        if (judgeTiming == null) {
+            judgeTiming = JudgeTiming(
+                accEstimation = accEstimation,
+                tvjudge = tvjudge,
+                nearBy = this,
+                tvgreat = TextView(context),
+                context = context,
+                playAudio = playAudio
+            )
+            Log.d(TAG, "JudgeTimingを初期化しました")
+        } else {
+            Log.d(TAG, "既存のJudgeTimingを利用します")
         }
     }
 
     private fun checkStartSignals() {
-        if (!::JudgeTiming.isInitialized) {
+        if (judgeTiming == null) {
             Log.e(TAG, "JudgeTiming が初期化されていません")
             return
         }
+
 
         if (startcount == maxConnections) {
             Log.d(TAG, "このテンポでラリーしてね")
@@ -251,25 +257,23 @@ class NearBy(private val context: Context, private var judgeTiming: JudgeTiming)
             }
 
             handler.postDelayed({
-                if (::playAudio.isInitialized) {
-                    playAudio.playAudio(context) //音ゲーにおける音源を再生
-                    val clientID = endpointId
-                    JudgeTiming.startJudging(clientID)
-                } else {
-                    Log.e(TAG, "playAudioが初期化されていません")
-                }
+                playAudio?.let {
+                    it.playAudio(context, judgeTiming = judgeTiming!!)
+                    judgeTiming!!.startJudging(endpointId)
+                } ?: Log.e(TAG, "playAudioが初期化されていません")
             }, delayMillis * countdownSounds.size)
         }
     }
+
 
     // 音を再生するメソッド
     private fun playSound(soundResId: Int) {
         val mediaPlayer = MediaPlayer.create(context, soundResId)
         mediaPlayer.setOnCompletionListener {
             it.release() // 音が再生し終わったらMediaPlayerを解放
+            maxConnections == 0
         }
         mediaPlayer.start() // 音を再生
     }
-
 
 }

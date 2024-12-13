@@ -1,8 +1,8 @@
 package com.example.audio
 
 import android.Manifest
-import android.content.Context
 import android.os.Bundle
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.example.audio.ui.main.MainFragment
@@ -17,30 +17,34 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        //ここでそれぞれのインスタンスの初期化を行う
+
+        nearBy = NearBy(this, null)  // ここで一旦nullを渡す
+
+        playAudio = PlayAudio(nearBy)
 
         judgeTiming = JudgeTiming(
             accEstimation = AccEstimation(),
             tvgreat = findViewById(R.id.tvgreat),
-            nearBy = null,
-            context = this
+            nearBy = nearBy,
+            context = this,
+            playAudio = playAudio,
+            tvjudge = TextView(this)
         )
 
-        nearBy = NearBy(this, judgeTiming)
-
-        judgeTiming.nearBy = nearBy
-
-        nearBy.setJudgeTiming(judgeTiming)
-
-        playAudio = PlayAudio(nearBy)
+        nearBy.setJudgeTiming(judgeTiming)  // 後からjudgeTimingをセット
         nearBy.setPlayAudio(playAudio)
+
+        nearBy.initializeJudgeTiming(
+            accEstimation = AccEstimation(),
+            tvjudge = findViewById(R.id.tvgreat),
+            playAudio = playAudio
+        )
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(R.id.container, MainFragment.newInstance(nearBy, judgeTiming))
             }
 
-            // xmlで定義したパーミッションの権限を付与
             val permissions = arrayOf(
                 Manifest.permission.RECORD_AUDIO,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -53,7 +57,6 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.NEARBY_WIFI_DEVICES
             )
 
-            // パーミッションの許可
             if (!EasyPermissions.hasPermissions(this, *permissions)) {
                 EasyPermissions.requestPermissions(this, "パーミッションに関する説明", 1, *permissions)
             }

@@ -14,13 +14,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import android.media.MediaPlayer
-import kotlinx.coroutines.GlobalScope
 
 class JudgeTiming(
     private val accEstimation: AccEstimation,
     private val tvgreat: TextView,
     var nearBy: NearBy? = null,
-    private val context: Context
+    private val context: Context,
+    private val playAudio: PlayAudio,
+    tvjudge: TextView
 ) : ViewModel() {
 
     // 追加: IDがすでに受信されたかどうかを管理するフラグ
@@ -138,28 +139,30 @@ class JudgeTiming(
     private fun playSoundAsync(soundType: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val player = when (soundType) {
-                    "GOOD" -> goodSoundPlayer
-                    "MISS" -> missSoundPlayer
-                    "TIMING" -> timingSoundPlayer
-                    else -> null
-                }
+                // PlayAudioのisPlaying()メソッドで音源が再生中かをチェック
+                if (playAudio.isPlaying()) {
+                    val player = when (soundType) {
+                        "GOOD" -> goodSoundPlayer
+                        "MISS" -> missSoundPlayer
+                        "TIMING" -> timingSoundPlayer
+                        else -> null
+                    }
 
-                player?.let {
-                    it.seekTo(0) // 再生位置をリセット
-                    it.start()
-                    Log.d("JudgeTiming", "サウンド再生が即時に開始されました: $soundType")
-                } ?: run {
-                    Log.e("JudgeTiming", "音声プレイヤーが準備されていません: $soundType")
+                    player?.let {
+                        it.seekTo(0) // 再生位置をリセット
+                        it.start()
+                        Log.d("JudgeTiming", "サウンド再生が即時に開始されました: $soundType")
+                    } ?: run {
+                        Log.e("JudgeTiming", "音声プレイヤーが準備されていません: $soundType")
+                    }
+                } else {
+                    Log.d("JudgeTiming", "音源が再生中でないため、TIMING音声は再生しません")
                 }
             } catch (e: Exception) {
                 Log.e("JudgeTiming", "サウンド再生中にエラーが発生しました", e)
             }
         }
     }
-
-
-
 
     fun startJudging(clientId: String) {
         job = viewModelScope.launch(Dispatchers.Default) {
@@ -182,13 +185,6 @@ class JudgeTiming(
                 nearBy?.enableReceiving()  // 受信を再度有効化
                 hasReceivedHitTime = false // Reset flag
                 hasReceivedId = false      // Reset ID flag
-
-                // 判定タイミングの0.5 * delayMillis秒前かどうかを確認
-//                if (System.currentTimeMillis() < (nowtime + judgingThreshold)) {
-//                    Log.d("JudgeTiming", "まだ判定タイミング前なので、triggerJudgingをスキップします")
-//                    continue
-//                }
-//                triggerJudging(clientId)
             }
         }
     }
@@ -201,8 +197,6 @@ class JudgeTiming(
             Log.d("JudgeTiming", "IDが受信されていないため、判定をスキップします")
             misscount += 1
             Log.d("JudgeTiming","うおおおおお $misscount")
-//            nowtime = System.currentTimeMillis() // nowtimeをリセット
-//            Log.d("JudgeTiming", "nowtimeをリセットしました: $nowtime")
             return
         }
 
@@ -262,6 +256,31 @@ class JudgeTiming(
         postJudgement(judgement)
         Log.d("Judgement","一つの判定を終了")
         Log.d("JudgeTiming", "-------------------⭐︎")
+    }
+
+    init {
+        Log.d("JudgeTiming", "JudgeTiming initialized")
+        accEstimation.isHit.observeForever(hitObserver)
+        accEstimation.lastHitTime.observeForever(hitTimeObserver)
+
+        // 曲の終了イベントを監視
+        playAudio.isAudioComplete.observeForever { isComplete ->
+            if (isComplete) {
+                stopTimingSound() // 曲終了時にTIMING音声を止める
+            }
+        }
+    }
+
+    fun stopTimingSound() {
+        try {
+            if (timingSoundPlayer?.isPlaying == true) {
+                timingSoundPlayer?.pause() // 再生を一時停止
+                timingSoundPlayer?.seekTo(0) // 再生位置を先頭に戻す
+                Log.d("JudgeTiming", "TIMING音声の再生を停止しました")
+            }
+        } catch (e: Exception) {
+            Log.e("JudgeTiming", "TIMING音声の停止中にエラーが発生しました", e)
+        }
     }
 
     private fun saveJudgement(clientId: String, judgement: String) {

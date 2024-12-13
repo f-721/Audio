@@ -1,6 +1,5 @@
 package com.example.audio.ui.main
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -18,6 +17,7 @@ import com.example.audio.JudgeTiming
 import android.media.MediaPlayer
 import android.view.Gravity
 import com.example.audio.NearBy
+import com.example.audio.PlayAudio
 import com.example.audio.R
 
 class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTiming) : Fragment() {
@@ -41,6 +41,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         savedInstanceState: Bundle?
     ): View {
         val rootView = inflater.inflate(R.layout.activity_main, container, false)
+        return inflater.inflate(R.layout.fragment_main, container, false)
 
         btnadvertise1 = rootView.findViewById(R.id.btnadvertise)
         btndouki = rootView.findViewById(R.id.btndouki)
@@ -83,7 +84,14 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         accEstimation = AccEstimation() // AccEstimation の初期化
 
         // JudgeTiming の初期化
-        judgeTime = JudgeTiming(accEstimation, tvjudge, nearBy, requireContext())
+        judgeTime = JudgeTiming(
+            accEstimation,
+            tvjudge,
+            nearBy,
+            requireContext(),
+            PlayAudio(nearBy),
+            tvjudge
+        )
 
         // NearBy の初期化
         nearBy.initializeNearby()
@@ -98,6 +106,7 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         )
 
 
+        // ここでは新たに初期化せず、`judgeTiming`を直接使用する
         nearBy.setConnectionCountListener(object : NearBy.ConnectionCountListener {
             override fun onConnectionCountChanged(count: Int) {
                 requireActivity().runOnUiThread {
@@ -117,46 +126,25 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         }
 
         btnresult.setOnClickListener {
-            Log.d("MainFragment", "btnresult button clicked")
+            val client1ResultsText = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
+            val client2ResultsText = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
 
-            // ここでは `judgeTiming` というオブジェクトが結果を持っていると仮定します
-             client1Results = judgeTiming.getResultsForClient("atuo_2b77e0851dd47474")
-             client2Results = judgeTiming.getResultsForClient("atuo_264ac95f5a0c0fbc")
 
-            // 両方のデータがない場合
-            if (client1Results == null && client2Results == null) {
-                // 「データがありません」とメッセージを表示する
-                val toast = Toast.makeText(requireContext(), "データがありません!", Toast.LENGTH_SHORT)
-                toast.setGravity(Gravity.CENTER, 0, 0)  // 中央に表示する
-                toast.show()
-                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
-                //mediaPlayer = MediaPlayer.create(requireContext(), R.raw.levelup)
-                mediaPlayer?.start()
+            if (client1ResultsText == null && client2ResultsText == null) {
+                Toast.makeText(requireContext(), "データがありません!", Toast.LENGTH_SHORT).apply {
+                    setGravity(Gravity.CENTER, 0, 0)
+                    show()
+                }
+                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result).apply { start() }
             } else {
-                //mediaPlayer = MediaPlayer.create(requireContext(), R.raw.result)
-                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.levelup) //おふざけ案
-                mediaPlayer?.start()
-                // 結果を表示するための文字列を作成
-                val results = StringBuilder()
-                client1Results?.let {
-                    results.append("クライアントデバイス1 (ID: ${it.id}):\n")
-                    //results.append("GREAT: ${it.greatCount}\n")
-                    results.append("GOOD: ${it.goodCount}\n")
-                    //results.append("BAD: ${it.badCount}\n")
-                    results.append("MISS: ${it.missCount}\n\n")
+                mediaPlayer = MediaPlayer.create(requireContext(), R.raw.levelup).apply { start() }
+                val resultsMessage = buildString {
+                    client1ResultsText?.let { append(it).append("\n\n") }
+                    client2ResultsText?.let { append(it) }
                 }
-                client2Results?.let {
-                    results.append("クライアントデバイス2 (ID: ${it.id}):\n")
-                    //results.append("GREAT: ${it.greatCount}\n")
-                    results.append("GOOD: ${it.goodCount}\n")
-                    //results.append("BAD: ${it.badCount}\n")
-                    results.append("MISS: ${it.missCount}\n")
-                }
-
-                // 結果を画面に表示する
                 AlertDialog.Builder(requireContext())
                     .setTitle("リズムゲーム結果(貢献度)")
-                    .setMessage(results.toString())
+                    .setMessage(resultsMessage)
                     .setPositiveButton("OK", null)
                     .show()
             }
