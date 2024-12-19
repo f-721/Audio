@@ -41,7 +41,6 @@ class MainFragment(private val nearBy: NearBy,private val judgeTiming: JudgeTimi
         savedInstanceState: Bundle?
     ): View {
         val rootView = inflater.inflate(R.layout.activity_main, container, false)
-        return inflater.inflate(R.layout.fragment_main, container, false)
 
         btnadvertise1 = rootView.findViewById(R.id.btnadvertise)
         btndouki = rootView.findViewById(R.id.btndouki)
