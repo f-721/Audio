@@ -29,9 +29,6 @@ class JudgeTiming(
 
     private var clientId: String? = null // 追加: clientId を保持するフィールド
 
-    // クライアントデバイスごとの結果を保存するためのマップ
-    private val resultsMap = mutableMapOf<String, ResultData>()
-
     private val _judgement = MutableLiveData<String>()
     private var job: Job? = null
     private var hitTime = 0L
@@ -42,10 +39,7 @@ class JudgeTiming(
     // クライアントIDをヒットタイムとペアで保存
     private val hitTimeWithClientIDMap = mutableMapOf<Long, String>()
 
-    private var mediaPlayer: MediaPlayer? = null
-
     private var nowtime: Long = 0L // nowtime をクラスフィールドとして定義
-    private var judgementTiming: Long = 0L
     private var delayMillis: Long = 0L
     var misscount = 0
 
@@ -150,6 +144,15 @@ class JudgeTiming(
 
                     player?.let {
                         it.seekTo(0) // 再生位置をリセット
+                        if (soundType == "MISS") {
+                            // MISS判定時はピッチを0.5ずつ下げる
+                            val currentPitch = it.playbackParams.speed // 現在のピッチを取得
+                            val newPitch = currentPitch - 0.5f
+                            it.playbackParams = it.playbackParams.setPitch(newPitch)
+                        } else if (soundType == "GOOD") {
+                            // GOOD判定時はピッチを元に戻す
+                            it.playbackParams = it.playbackParams.setPitch(1.0f)
+                        }
                         it.start()
                         Log.d("JudgeTiming", "サウンド再生が即時に開始されました: $soundType")
                     } ?: run {
@@ -191,31 +194,20 @@ class JudgeTiming(
 
 
     fun triggerJudging(clientId: String) {
-
         // IDが受信されていない場合
         if (!hasReceivedId) {
             Log.d("JudgeTiming", "IDが受信されていないため、判定をスキップします")
             misscount += 1
-            Log.d("JudgeTiming","うおおおおお $misscount")
+            Log.d("JudgeTiming", "うおおおおお $misscount")
             return
         }
 
-//        val Judgementtiming = nowtime + 0.5 * (delayMillis)
         var timeDiff: Long = (nowtime - hitTime) // 判定タイミングとヒットタイムとの差
 
-        //ここの時間のズレの値は日が経つにつれて大きくなっていきます(多分)
-        //その際は全てのデバイスを再起動して接続し直すことで改善します
-
-//         //特定のクライアントIDなら +1500ms を timeDiff に加算
+        // 特定のクライアントIDなら時間差を調整
         if (clientId == "atuo_2b77e0851dd47474") {
             timeDiff -= 1000
         }
-//
-//        if (clientId == "atuo_264ac95f5a0c0fbc") {
-//            timeDiff -= 8
-//        }
-
-
 
         Log.d("JudgeTiming", "-------------------")
         Log.d("JudgeTiming", "ゲーム内判定時刻(nowtime): $nowtime ms")
@@ -230,12 +222,13 @@ class JudgeTiming(
 
         val judgement = when {
             timeDiff in lowerBound..upperBound -> {
-                viewModelScope.launch(Dispatchers.Main){
+                viewModelScope.launch(Dispatchers.Main) {
                     tvgreat.text = "GOOD"
                 }
                 Log.d("JudgeTiming", "GOODです")
-                playSoundAsync("GOOD")
-                Log.d("JudgeTiming","シャン")
+
+                // ピッチを元に戻す（1.0で元に戻す）
+                playAudio.changePitch(1.0f)
                 "GOOD"
             }
             else -> {
@@ -243,20 +236,33 @@ class JudgeTiming(
                     tvgreat.text = "MISS"
                 }
                 Log.d("JudgeTiming", "失敗(MISS)")
-                playSoundAsync("MISS")
-                Log.d("JudgeTiming","パフ")
+
+                // ピッチを下げる（例: 0.9でピッチダウン）
+                playAudio.changePitch(0.9f)
                 "MISS"
             }
         }
+
+        // `missCount`に基づいて段階的にピッチを変更
+        fun adjustPitchBasedOnMissCount(missCount: Int) {
+            val pitchStep = 0.1f  // ピッチを段階的に変更
+            val minPitch = 0.7f   // 最小ピッチ（例えば0.7）
+            val maxPitch = 1.0f   // 最大ピッチ（1.0が元のピッチ）
+
+            val adjustedPitch = (maxPitch - missCount * pitchStep).coerceAtLeast(minPitch)
+            playAudio.changePitch(adjustedPitch)
+        }
+
 
         clientId?.let {
             saveJudgement(it, judgement) // clientId を使って保存
         }
 
         postJudgement(judgement)
-        Log.d("Judgement","一つの判定を終了")
+        Log.d("Judgement", "一つの判定を終了")
         Log.d("JudgeTiming", "-------------------⭐︎")
     }
+
 
     init {
         Log.d("JudgeTiming", "JudgeTiming initialized")
