@@ -62,7 +62,7 @@ class PlayAudio(private val nearBy: NearBy) {
     }
 
     // 音源の再生
-    fun playAudio2() {
+    fun playAudio2(context: Context, judgeTiming: JudgeTiming) {
         if (audioData == null || audioData!!.isEmpty()) {
             Log.e(TAG, "音源データがセットされていません")
             return
@@ -84,18 +84,31 @@ class PlayAudio(private val nearBy: NearBy) {
 
         // 音源データをストリームに送信
         audioTrack?.write(audioData!!, 0, audioData!!.size)
+
+        // 曲終了のための処理（stopTimingSound）
+        stopTimingSound(judgeTiming)
     }
 
-    // 再生を停止
-    fun stopAudio() {
-        audioTrack?.stop()
-        audioTrack?.release()
-        isPlaying = false
+    // 音源データをセットする例
+    fun loadAudioData(context: Context) {
+        val resourceName = "your_audio_file_name"
+        val resId = context.resources.getIdentifier(resourceName, "raw", context.packageName)
+
+        // バイナリデータを取得
+        val inputStream = context.resources.openRawResource(resId)
+        val audioData = inputStream.readBytes()
+        setAudioData(audioData)
     }
+
+
+
 
     private fun stopTimingSound(judgeTiming: JudgeTiming) {
         // 曲が終了した際にTIMING音声も停止する処理を追加
         judgeTiming.stopTimingSound()
+        audioTrack?.stop()
+        audioTrack?.release()
+        isPlaying = false
     }
 
     // 音源が再生中かどうかを確認するメソッド
