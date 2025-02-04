@@ -1,7 +1,6 @@
 package com.example.audio
 
 import android.content.Context
-import android.security.identity.ResultData
 import android.util.Log
 import android.widget.TextView
 import androidx.lifecycle.MutableLiveData
@@ -97,7 +96,7 @@ class JudgeTiming(
         accEstimation.lastHitTime.removeObserver(hitTimeObserver)
     }
 
-    fun recordid(clientId: String) {
+    fun recordid(clientId: String,) {
         if (!hasReceivedId) {
             Log.d("JudgeTiming:recordid", "IDを受信: $clientId")
             this.clientId = clientId
@@ -111,6 +110,11 @@ class JudgeTiming(
         } else {
             Log.d("JudgeTiming", "IDは既に受信されました")
         }
+//
+//        fun stoprecord(){
+//            job?.cancel()
+//            Log.d("JudgeTiming","ID受信終了")
+//        }
     }
 
     fun clearResultsForClient(clientId: String) {
@@ -166,6 +170,8 @@ class JudgeTiming(
             }
         }
     }
+
+
 
     fun startJudging(clientId: String) {
         job = viewModelScope.launch(Dispatchers.Default) {
@@ -227,7 +233,7 @@ class JudgeTiming(
                 }
                 Log.d("JudgeTiming", "GOODです")
 
-                // ピッチを元に戻す（1.0で元に戻す）
+                // ピッチを元に戻す（例: 標準ピッチ=1.0）
                 playAudio.changePitch(1.0f)
                 "GOOD"
             }
@@ -237,22 +243,16 @@ class JudgeTiming(
                 }
                 Log.d("JudgeTiming", "失敗(MISS)")
 
-                // ピッチを下げる（例: 0.9でピッチダウン）
+                // ピッチを下げる（例: MISS時は0.9）
                 playAudio.changePitch(0.9f)
                 "MISS"
             }
         }
 
-        // `missCount`に基づいて段階的にピッチを変更
-        fun adjustPitchBasedOnMissCount(missCount: Int) {
-            val pitchStep = 0.1f  // ピッチを段階的に変更
-            val minPitch = 0.7f   // 最小ピッチ（例えば0.7）
-            val maxPitch = 1.0f   // 最大ピッチ（1.0が元のピッチ）
-
-            val adjustedPitch = (maxPitch - missCount * pitchStep).coerceAtLeast(minPitch)
-            playAudio.changePitch(adjustedPitch)
+        fun stopJudging() {
+            job?.cancel()  // jobをキャンセルして判定処理を停止
+            Log.d("JudgeTiming", "Judging process has been stopped")
         }
-
 
         clientId?.let {
             saveJudgement(it, judgement) // clientId を使って保存
